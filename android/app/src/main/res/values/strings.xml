@@ -1,0 +1,9 @@
+<resources>
+  <string name="app_name">activity-mate-expo</string>
+  <string name="expo_splash_screen_resize_mode" translatable="false">contain</string>
+  <string name="expo_splash_screen_status_bar_translucent" translatable="false">false</string>
+  <string name="expo_system_ui_user_interface_style" translatable="false">automatic</string>
+  <string name="facebook_app_id">1048372593983513</string>
+  <string name="facebook_client_token">9b8e12de4aae9a7cf5eaee15d85609fe</string>
+  <string name="fb_login_protocol_scheme">1048372593983513</string>
+</resources>

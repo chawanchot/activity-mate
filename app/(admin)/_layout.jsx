@@ -1,0 +1,63 @@
+import { Stack } from "expo-router";
+import { MaterialIcons } from "@expo/vector-icons";
+import { TouchableOpacity, Alert } from "react-native";
+import auth from "@react-native-firebase/auth";
+import { router } from "expo-router";
+import { useAuth } from "../../contexts/AuthContext";
+import { useEffect } from "react";
+
+export default function AdminLayout() {
+    const { loggedIn } = useAuth();
+
+    const logout = () => {
+        Alert.alert("", "ออกจากระบบ", [
+            {
+                text: "ยกเลิก",
+            },
+            {
+                text: "ยืนยัน",
+                onPress: () =>
+                    auth()
+                        .signOut()
+                        .catch((error) =>
+                            console.log("Error signing out: ", error)
+                        ),
+            },
+        ]);
+    };
+
+    useEffect(() => {
+        if (!loggedIn) {
+            router.replace("/login");
+        }
+    }, [loggedIn]);
+
+    return (
+        <Stack>
+            <Stack.Screen
+                name="home"
+                options={{
+                    headerShown: true,
+                    headerTitle: "",
+                    headerShadowVisible: false,
+                    headerRight: () => (
+                        <TouchableOpacity onPress={logout}>
+                            <MaterialIcons
+                                name="logout"
+                                size={30}
+                                color="red"
+                            />
+                        </TouchableOpacity>
+                    ),
+                }}
+            />
+            <Stack.Screen
+                name="category"
+                options={{
+                    headerTitle: "จัดการหมวดหมู่กิจกรรม",
+                    headerTitleAlign: "center",
+                }}
+            />
+        </Stack>
+    );
+}
