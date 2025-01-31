@@ -1,5 +1,4 @@
 import {
-    View,
     Text,
     SafeAreaView,
     ScrollView,
@@ -25,7 +24,7 @@ export default function AdminHome() {
                         color="orange"
                         className="mr-4"
                     />
-                    <Text className="text-lg font-semibold">จัดการสมาชิก</Text>
+                    <Text className="text-lg font-kanitsemibold">จัดการสมาชิก</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -38,7 +37,7 @@ export default function AdminHome() {
                         color="#00C8FF"
                         className="mr-4"
                     />
-                    <Text className="text-lg font-semibold">จัดการหมวดหมู่กิจกรรม</Text>
+                    <Text className="text-lg font-kanitsemibold">จัดการหมวดหมู่กิจกรรม</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -51,7 +50,7 @@ export default function AdminHome() {
                         color="#006FFF"
                         className="mr-4"
                     />
-                    <Text className="text-lg font-semibold">จัดการกิจกรรม</Text>
+                    <Text className="text-lg font-kanitsemibold">จัดการกิจกรรม</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -64,7 +63,7 @@ export default function AdminHome() {
                         color="#FFF600"
                         className="mr-4"
                     />
-                    <Text className="text-lg font-semibold">จัดการรีวิวและคะแนน</Text>
+                    <Text className="text-lg font-kanitsemibold">จัดการรีวิวและคะแนน</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -77,7 +76,7 @@ export default function AdminHome() {
                         color="#FF9D00"
                         className="mr-4"
                     />
-                    <Text className="text-lg font-semibold">การแจ้งรายงานจากผู้ใช้</Text>
+                    <Text className="text-lg font-kanitsemibold">การแจ้งรายงานจากผู้ใช้</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -90,7 +89,7 @@ export default function AdminHome() {
                         color="#FF0000"
                         className="mr-4"
                     />
-                    <Text className="text-lg font-semibold">ประวัติการระงับบัญชี</Text>
+                    <Text className="text-lg font-kanitsemibold">ประวัติการระงับบัญชี</Text>
                 </TouchableOpacity>
             </ScrollView>
         </SafeAreaView>

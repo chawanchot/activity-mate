@@ -1,4 +1,3 @@
-// AuthContext.js
 import React, { createContext, useContext, useEffect, useState } from "react";
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
@@ -16,39 +15,38 @@ export const AuthProvider = ({ children }) => {
 
     // ฟังก์ชันสำหรับตรวจสอบสถานะการเข้าสู่ระบบ
     useEffect(() => {
-        const subscriber = auth().onAuthStateChanged((user) => {
-            setUser(user);
-            setIsLoading(false); // เมื่อโหลดเสร็จสิ้น
+        const subscriber = auth().onAuthStateChanged(async (data) => {
+            setIsLoading(true); // เริ่มต้นโหลดข้อมูล
+            if (data) {
+                try {
+                    // ดึงข้อมูลผู้ใช้จาก Firestore
+                    const userDoc = await db.collection("users").doc(data.uid).get();
 
-            if (user) {
-                setLoggedIn(true);
+                    if (userDoc.exists) {
+                        setUser(userDoc.data()); // อัปเดต State `user` ด้วยข้อมูลจาก Firestore
+                    } else {
+                        // ถ้าไม่มีข้อมูลใน Firestore ให้สร้างใหม่
+                        const newUser = {
+                            uid: data.uid,
+                            username: data.displayName || "Unknown User",
+                            email: data.email,
+                            profilePicture: data.photoURL || "",
+                            role: "member",
+                            status: true,
+                        };
+                        await db.collection("users").doc(data.uid).set(newUser);
+                        setUser(newUser); // อัปเดต State `user` ด้วยข้อมูลที่เพิ่งสร้าง
+                    }
 
-                db.collection("users")
-                    .doc(user.uid)
-                    .get()
-                    .then(function (doc) {
-                        if (doc.exists) {
-                            console.log("1");
-                            console.log(doc.data());
-                            setUser(doc.data());
-                        } else {
-                            console.log("2");
-                            db.collection("users").doc(user.uid).set({
-                                uid: user.uid,
-                                username: user.displayName,
-                                email: user.email,
-                                profilePicture: user.photoURL,
-                                role: "member",
-                                status: true,
-                            });
-                        }
-                    })
-                    .catch(function (error) {
-                        console.log("Error getting document:", error);
-                    });
+                    setLoggedIn(true);
+                } catch (error) {
+                    console.error("Error fetching user data:", error);
+                }
             } else {
                 setLoggedIn(false);
+                setUser(null); // เคลียร์ข้อมูลผู้ใช้เมื่อออกจากระบบ
             }
+            setIsLoading(false); // เสร็จสิ้นการโหลด
         });
 
         return subscriber; // ยกเลิกการติดตามเมื่อ component ถูกทำลาย

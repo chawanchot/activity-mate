@@ -1,10 +1,10 @@
 import { View, Text } from 'react-native'
 import React from 'react'
 
-export default function MemberHome() {
+export default function MemberSeachActivity() {
   return (
     <View>
-      <Text>MemberHome</Text>
+      <Text>SeachActivity Page</Text>
     </View>
   )
 }

@@ -33,7 +33,7 @@ export default function AdminLayout() {
     }, [loggedIn]);
 
     return (
-        <Stack>
+        <Stack screenOptions={{ headerShadowVisible: false }}>
             <Stack.Screen
                 name="home"
                 options={{
@@ -56,6 +56,9 @@ export default function AdminLayout() {
                 options={{
                     headerTitle: "จัดการหมวดหมู่กิจกรรม",
                     headerTitleAlign: "center",
+                    headerTitleStyle: {
+                        fontFamily: "Kanit_400Regular",
+                    },
                 }}
             />
         </Stack>

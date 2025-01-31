@@ -104,7 +104,7 @@ export default function Category() {
                 onPress={() => setShowAddModal(true)}
                 className="my-2 bg-['#5C77FE'] h-[50px] rounded-lg flex justify-center items-center"
             >
-                <Text className="text-white text-lg font-bold">
+                <Text className="text-white text-lg font-kanitsemibold">
                     เพิ่มหมวดหมู่กิจกรรม
                 </Text>
             </TouchableOpacity>
@@ -112,11 +112,12 @@ export default function Category() {
             <FlatList
                 data={category}
                 keyExtractor={(item) => item.id}
+                contentContainerStyle={{ padding: 3}}
                 renderItem={({ item }) => (
-                    <View className="bg-white p-2 rounded-lg shadow-black shadow-xl mb-4">
+                    <View className="bg-white p-2 rounded-lg shadow-xl mb-2">
                         <View className="flex-row justify-between items-center">
                             <View className="w-[75%]">
-                                <Text className="text-xl font-semibold">
+                                <Text className="text-xl font-kanitsemibold">
                                     {item.name}
                                 </Text>
                             </View>
@@ -128,7 +129,7 @@ export default function Category() {
                                     }
                                     className="mb-1 bg-['#FFC300'] w-full h-[30px] rounded-md flex justify-center items-center"
                                 >
-                                    <Text className="text-black">แก้ไข</Text>
+                                    <Text className="text-black font-kanit">แก้ไข</Text>
                                 </TouchableOpacity>
                                 {item.status ? (
                                     <TouchableOpacity
@@ -138,7 +139,7 @@ export default function Category() {
                                         }
                                         className="bg-['#FF6200'] w-full h-[30px] rounded-md flex justify-center items-center"
                                     >
-                                        <Text className="text-white">
+                                        <Text className="text-white font-kanit">
                                             ยกเลิก
                                         </Text>
                                     </TouchableOpacity>
@@ -150,7 +151,7 @@ export default function Category() {
                                         }
                                         className="bg-['#0095FF'] w-full h-[30px] rounded-md flex justify-center items-center"
                                     >
-                                        <Text className="text-white">
+                                        <Text className="text-white font-kanit">
                                             เปิดใช้งาน
                                         </Text>
                                     </TouchableOpacity>
@@ -172,8 +173,8 @@ export default function Category() {
                 }}
             >
                 <View className="flex-1 justify-center items-center">
-                    <View className="bg-white p-4 shadow-black w-[80%] min-h-[85px] flex justify-center items-center rounded-lg">
-                        <Text className="font-bold text-lg">
+                    <View className="bg-white shadow-lg p-4 w-[80%] min-h-[85px] flex justify-center items-center rounded-lg">
+                        <Text className="font-kanitsemibold text-lg">
                             เพิ่มหมวดหมู่กิจกรรม
                         </Text>
                         <TouchableOpacity
@@ -194,7 +195,7 @@ export default function Category() {
                                 color="#373F78"
                             />
                             <TextInput
-                                className="text-black text-lg ml-2"
+                                className="text-black text-lg ml-2 font-kanit"
                                 placeholder="ชื่อหมวดหมู่"
                                 placeholderTextColor="#373F78"
                                 value={addInput}
@@ -207,7 +208,7 @@ export default function Category() {
                                 onPress={addCategory}
                                 className="mb-1 bg-['#5476FF'] w-16 h-[35px] rounded-md flex justify-center items-center"
                             >
-                                <Text className="text-white font-bold">
+                                <Text className="text-white font-kanitsemibold">
                                     ยืนยัน
                                 </Text>
                             </TouchableOpacity>
@@ -227,8 +228,8 @@ export default function Category() {
                 }}
             >
                 <View className="flex-1 justify-center items-center">
-                    <View className="bg-white p-4 shadow-black w-[80%] min-h-[85px] flex justify-center items-center rounded-lg">
-                        <Text className="font-bold text-lg">
+                    <View className="bg-white p-4 shadow-lg w-[80%] min-h-[85px] flex justify-center items-center rounded-lg">
+                        <Text className="font-kanitsemibold text-lg">
                             แก้ไขหมวดหมู่กิจกรรม
                         </Text>
                         <TouchableOpacity
@@ -249,7 +250,7 @@ export default function Category() {
                                 color="#373F78"
                             />
                             <TextInput
-                                className="text-black text-lg ml-2"
+                                className="text-black text-lg ml-2 font-kanit"
                                 placeholder="ชื่อหมวดหมู่"
                                 placeholderTextColor="#373F78"
                                 value={editInput}
@@ -262,7 +263,7 @@ export default function Category() {
                                 onPress={submitEdit}
                                 className="mb-1 bg-['#5476FF'] w-16 h-[35px] rounded-md flex justify-center items-center"
                             >
-                                <Text className="text-white font-bold">
+                                <Text className="text-white font-kanitsemibold">
                                     ยืนยัน
                                 </Text>
                             </TouchableOpacity>

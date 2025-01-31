@@ -21,7 +21,7 @@ export default function Login() {
 
     useEffect(() => {
         if (loggedIn) {
-            router.replace("/(admin)/home");
+            router.replace("/");
         }
     }, [loggedIn])
 

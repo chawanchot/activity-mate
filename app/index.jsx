@@ -1,29 +1,33 @@
-import {
-    Text,
-    SafeAreaView,
-} from "react-native";
-import React from "react";
-import { Redirect } from "expo-router";
+import { useEffect } from "react";
+import { Redirect, router } from "expo-router";
+import { View, Text, ActivityIndicator } from "react-native";
 import { useAuth } from "../contexts/AuthContext";
 
 export default function Index() {
-    const { isLoading, loggedIn } = useAuth()
+    const { isLoading, loggedIn, user } = useAuth();
 
-    if (isLoading) {
-        return (
-            <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <Text>Loading...</Text>
-            </SafeAreaView>
-        );
-    }
+    // useEffect(() => {
+    //     if (!isLoading) {
+    //         if (!loggedIn) {
+    //             router.replace("/login");
+    //         } else if (user?.role === "admin") {
+    //             router.replace("/(admin)/home");
+    //         } else {
+    //             router.replace("/(tabs)/home");
+    //         }
+    //     }
+    // }, [isLoading, loggedIn, user]);
 
-    if (!loggedIn) {
-        return (
-            <Redirect href="/login" />
-        );
-    }
+    // if (isLoading) {
+    //     return (
+    //         <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+    //             <ActivityIndicator size="large" color="#0000ff" />
+    //             <Text>กำลังโหลดข้อมูล...</Text>
+    //         </View>
+    //     );
+    // }
 
     return (
-        <Redirect href="/(admin)/home" />
+        <Redirect href="/verify" />
     )
-};
+}
