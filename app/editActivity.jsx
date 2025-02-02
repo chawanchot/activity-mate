@@ -1,4 +1,4 @@
-import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import { FontAwesome5 } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -35,20 +35,6 @@ export default function EditActivity() {
 
     const [open, setOpen] = useState(false);
     const [categories, setCategories] = useState([]);
-
-    const getCategoryData = (querySnapShot) => {
-        const Arr = [];
-        querySnapShot.forEach((res) => {
-            const { name, status } = res.data();
-            Arr.push({
-                id: res.id,
-                name,
-                status,
-            });
-        });
-
-        setCategories(Arr);
-    };
 
     const submit = async () => {
         if (name && description && max > 0 && place && selectedCategory) {
@@ -117,9 +103,31 @@ export default function EditActivity() {
     }
 
     useEffect(() => {
-        dbCategory.onSnapshot(getCategoryData);
+        const getCategory = async () => {
+            try {
+                const fetchCategory = await firestore()
+                    .collection("category")
+                    .get();
+        
+                const dataCategory = [];
+
+                for (const doc of fetchCategory.docs) {
+                    const data = doc.data();
+
+                    dataCategory.push({
+                        id: doc.id,
+                        ...data
+                    });
+                }
+        
+                setCategories(dataCategory);
+            } catch (error) {
+                console.log("fetch category error: ", error);
+            }
+        }
 
         const getActivityData = async () => {
+            setLoading(true);
             try {
                 const fetchActivity = await firestore()
                     .collection("activities")
@@ -131,7 +139,7 @@ export default function EditActivity() {
                 if (activityData) {
                     setName(activityData.name);
                     setDescription(activityData.description);
-                    setMax(activityData.max);
+                    setMax(activityData.max.toString());
                     setSelectedCategory(activityData.categoryID);
                     setPlace({
                         name: activityData.locationName,
@@ -146,15 +154,16 @@ export default function EditActivity() {
                     setStartDate(convertDateTime(activityData.startDate));
                     setStartTime(convertDateTime(activityData.startDate));
                     setEndDate(convertDateTime(activityData.endDate));
-                    setEndDate(convertDateTime(activityData.endDate));
+                    setEndTime(convertDateTime(activityData.endDate));
                 }
-
-                setLoading(false);
             } catch (error) {
-                console.log(error);
+                console.log("fetch activity data error: ", error);
             }
+
+            setLoading(false);
         };
 
+        getCategory();
         getActivityData();
     }, []);
 
@@ -189,50 +198,46 @@ export default function EditActivity() {
     }
 
     return (
-        <SafeAreaView className="h-full bg-white" key={params.id}>
+        <SafeAreaView style={styles.container} key={params.id}>
             <View>
                 {/* Form */}
-                <View className="p-5">
+                <View style={{ paddingHorizontal: 18 }}>
                     {/* ชื่อกิจกรรม */}
-                    <Text className="font-kanit">ชื่อกิจกรรม</Text>
-                    <View className="flex-row items-center mb-2 bg-[#FFF5F5] rounded-xl h-16 px-3 w-full">
+                    <Text style={styles.label}>ชื่อกิจกรรม</Text>
+                    <View style={styles.inputContainer}>
                         <FontAwesome5 name="pen" size={16} color="#A6A6A6" />
                         <TextInput
-                            className="flex-1 ml-2 text-xl font-kanit"
+                            style={styles.input}
                             value={name}
                             onChangeText={setName}
                         />
                     </View>
 
                     {/* รายละเอียด */}
-                    <Text className="font-kanit">รายละเอียด</Text>
-                    <View className="flex-row items-center mb-2 bg-[#FFF5F5] rounded-xl h-16 px-3 w-full">
+                    <Text style={styles.label}>รายละเอียด</Text>
+                    <View style={styles.inputContainer}>
                         <FontAwesome5
                             name="align-left"
                             size={16}
                             color="#A6A6A6"
                         />
                         <TextInput
-                            className="flex-1 ml-2 text-xl font-kanit"
+                            style={styles.input}
                             value={description}
                             onChangeText={setDescription}
                         />
                     </View>
 
                     {/* วันที่เริ่มต้น / เวลาที่เริ่มต้น */}
-                    <Text className="font-kanit">วันที่/เวลา เริ่มกิจกรรม</Text>
-                    <View className="flex-row gap-2 mb-2">
-                        <View className="flex-1 flex-row items-center bg-[#FFF5F5] rounded-xl h-16 px-2">
-                            <FontAwesome5
-                                name="calendar"
-                                size={16}
-                                color="#D675A7"
-                            />
+                    <Text style={styles.label}>วันที่/เวลา เริ่มกิจกรรม</Text>
+                    <View style={styles.dateTimeContainer}>
+                        <View style={styles.dateTimeInput}>
+                            <FontAwesome5 name="calendar" size={16} color="#D675A7" />
                             <TouchableOpacity
                                 onPress={() => setShowStartDatePicker(true)}
-                                className="flex-1 ml-2"
+                                style={{ flex: 1, marginLeft: 8 }}
                             >
-                                <Text className="text-xl font-kanit">
+                                <Text style={styles.dateTimeText}>
                                     {startDate.toLocaleDateString("th-TH")}
                                 </Text>
                             </TouchableOpacity>
@@ -249,17 +254,13 @@ export default function EditActivity() {
                                 }}
                             />
                         )}
-                        <View className="flex-1 flex-row items-center bg-[#FFF5F5] rounded-xl h-16 px-2">
-                            <FontAwesome5
-                                name="clock"
-                                size={16}
-                                color="#D675A7"
-                            />
+                        <View style={styles.dateTimeInput}>
+                            <FontAwesome5 name="clock" size={16} color="#D675A7" />
                             <TouchableOpacity
                                 onPress={() => setShowStartTimePicker(true)}
-                                className="flex-1 ml-2"
+                                style={{ flex: 1, marginLeft: 8 }}
                             >
-                                <Text className="text-xl font-kanit">
+                                <Text style={styles.dateTimeText}>
                                     {startTime.toLocaleTimeString("th-TH", {
                                         hour: "2-digit",
                                         minute: "2-digit",
@@ -282,19 +283,15 @@ export default function EditActivity() {
                     </View>
 
                     {/* วันที่สิ้นสุด / เวลาสิ้นสุด */}
-                    <Text className="font-kanit">วันที่/เวลา สิ้นสุดกิจกรรม</Text>
-                    <View className="flex-row gap-2 mb-2">
-                        <View className="flex-1 flex-row items-center bg-[#FFF5F5] rounded-xl h-16 px-2">
-                            <FontAwesome5
-                                name="calendar"
-                                size={16}
-                                color="#D675A7"
-                            />
+                    <Text style={styles.label}>วันที่/เวลา สิ้นสุดกิจกรรม</Text>
+                    <View style={styles.dateTimeContainer}>
+                        <View style={styles.dateTimeInput}>
+                            <FontAwesome5 name="calendar" size={16} color="#D675A7" />
                             <TouchableOpacity
                                 onPress={() => setShowEndDatePicker(true)}
-                                className="flex-1 ml-2"
+                                style={{ flex: 1, marginLeft: 8 }}
                             >
-                                <Text className="text-xl font-kanit">
+                                <Text style={styles.dateTimeText}>
                                     {endDate.toLocaleDateString("th-TH")}
                                 </Text>
                             </TouchableOpacity>
@@ -312,17 +309,13 @@ export default function EditActivity() {
                                 }}
                             />
                         )}
-                        <View className="flex-1 flex-row items-center bg-[#FFF5F5] rounded-xl h-16 px-2">
-                            <FontAwesome5
-                                name="clock"
-                                size={16}
-                                color="#D675A7"
-                            />
+                        <View style={styles.dateTimeInput}>
+                            <FontAwesome5 name="clock" size={16} color="#D675A7" />
                             <TouchableOpacity
                                 onPress={() => setShowEndTimePicker(true)}
-                                className="flex-1 ml-2"
+                                style={{ flex: 1, marginLeft: 8 }}
                             >
-                                <Text className="text-xl font-kanit">
+                                <Text style={styles.dateTimeText}>
                                     {endTime.toLocaleTimeString("th-TH", {
                                         hour: "2-digit",
                                         minute: "2-digit",
@@ -345,11 +338,11 @@ export default function EditActivity() {
                     </View>
 
                     {/* จำนวนเข้าร่วมสูงสุด */}
-                    <Text className="font-kanit">จำนวนเข้าร่วมสูงสุด</Text>
-                    <View className="flex-row items-center mb-2 bg-[#FFF5F5] rounded-xl h-16 px-3 w-full">
+                    <Text style={styles.label}>จำนวนเข้าร่วมสูงสุด</Text>
+                    <View style={styles.inputContainer}>
                         <FontAwesome5 name="users" size={16} color="#A6A6A6" />
                         <TextInput
-                            className="flex-1 ml-2 text-xl font-kanit"
+                            style={styles.input}
                             keyboardType="number-pad"
                             value={max}
                             onChangeText={setMax}
@@ -357,7 +350,7 @@ export default function EditActivity() {
                     </View>
 
                     {/* สถานที่ */}
-                    <Text className="font-kanit">สถานที่จัดกิจกรรม</Text>
+                    <Text style={styles.label}>สถานที่จัดกิจกรรม</Text>
                     <TouchableOpacity
                         onPress={() => router.push({
                             pathname: "/searchLocation",
@@ -374,26 +367,18 @@ export default function EditActivity() {
                                 backRoute: "/editActivity",
                             }
                         })}
-                        className="flex-row items-center mb-2 bg-[#FFF5F5] rounded-xl h-16 px-3 w-full"
+                        style={styles.inputContainer}
                     >
-                        <FontAwesome5
-                            name="map-marker-alt"
-                            size={16}
-                            color="#A6A6A6"
-                        />
+                        <FontAwesome5 name="map-marker-alt" size={16} color="#A6A6A6" />
                         <Text className="flex-1 ml-2 text-xl font-kanit">
                             {place ? place.name : ""}
                         </Text>
                     </TouchableOpacity>
 
                     {/* หมวดหมู่กิจกรรม */}
-                    <Text className="font-kanit">หมวดหมู่กิจกรรม</Text>
-                    <View className="flex-row items-center mb-2 bg-[#FFF5F5] rounded-xl h-16 px-3 w-full">
-                        <FontAwesome5
-                            name="layer-group"
-                            size={16}
-                            color="#A6A6A6"
-                        />
+                    <Text style={styles.label}>หมวดหมู่กิจกรรม</Text>
+                    <View style={styles.inputContainer}>
+                        <FontAwesome5 name="layer-group" size={16} color="#A6A6A6" />
                         <DropDownPicker
                             open={open}
                             value={selectedCategory}
@@ -423,9 +408,9 @@ export default function EditActivity() {
                 </View>
 
                 {/* Button */}
-                <View className="p-4">
-                    <TouchableOpacity onPress={submit} className="bg-orange-400 rounded-full items-center py-3">
-                        <Text className="text-white font-bold text-lg">
+                <View style={{ paddingHorizontal: 16 }}>
+                    <TouchableOpacity onPress={submit} style={styles.button}>
+                        <Text style={styles.buttonText}>
                             แก้ไข
                         </Text>
                     </TouchableOpacity>
@@ -434,3 +419,61 @@ export default function EditActivity() {
         </SafeAreaView>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: "white"
+    },
+    label: {
+        fontFamily: "Kanit_400Regular"
+    },
+    inputContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#FFF5F5",
+        marginBottom: 10,
+        borderRadius: 10,
+        height: 55,
+        paddingHorizontal: 10,
+        width: "100%",
+    },
+    input: {
+        flex: 1,
+        marginLeft: 10,
+        fontSize: 18,
+        fontFamily: "Kanit_400Regular",
+    },
+    dateTimeContainer: {
+        flexDirection: "row",
+        gap: 8,
+        marginBottom: 8,
+    },
+    dateTimeInput: {
+        flex: 1,
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#FFF5F5",
+        borderRadius: 10,
+        height: 55,
+        paddingHorizontal: 10,
+    },
+    dateTimeText: {
+        marginLeft: 10,
+        fontSize: 18,
+        fontFamily: "Kanit_400Regular",
+    },
+    button: {
+        marginTop: 10,
+        backgroundColor: "#fb923c",
+        height: 48,
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: 20
+    },
+    buttonText: {
+        fontFamily: "Kanit_600SemiBold",
+        fontSize: 18,
+        color: "white"
+    }
+})

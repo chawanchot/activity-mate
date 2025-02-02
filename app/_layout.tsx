@@ -43,6 +43,9 @@ export default function RootLayout() {
                         headerShown: true,
                         headerTitle: "ค้นหาสถานที่",
                         headerTitleAlign: "center",
+                        headerTitleStyle: {
+                            fontFamily: "Kanit_600SemiBold",
+                        },
                     }}
                 />
                 <Stack.Screen
@@ -59,7 +62,18 @@ export default function RootLayout() {
                         headerTitle: "แก้ไขกิจกรรม",
                         headerTitleAlign: "center",
                         headerTitleStyle: {
-                            fontFamily: "Kanit_400Regular",
+                            fontFamily: "Kanit_600SemiBold",
+                        },
+                    }}
+                />
+                <Stack.Screen
+                    name="editProfile"
+                    options={{
+                        headerShown: true,
+                        headerTitle: "แก้ไขข้อมูลส่วนตัว",
+                        headerTitleAlign: "center",
+                        headerTitleStyle: {
+                            fontFamily: "Kanit_600SemiBold",
                         },
                     }}
                 />

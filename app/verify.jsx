@@ -1,4 +1,5 @@
 import {
+    StyleSheet,
     View,
     Text,
     SafeAreaView,
@@ -11,15 +12,21 @@ import AntDesign from "@expo/vector-icons/AntDesign";
 import DropDownPicker from "react-native-dropdown-picker";
 import proviceData from "../constants/proviceData.json";
 import { MaterialIcons } from "@expo/vector-icons";
+import firestore from "@react-native-firebase/firestore";
+import { useAuth } from "../contexts/AuthContext";
+import { router } from "expo-router";
 
 export default function Verify() {
+    const { user, setUser } = useAuth();
+
     const [open, setOpen] = useState(false);
     const [idCardNumber, setIdCardNumber] = useState("");
     const [provice, setProvice] = useState("");
 
-    const checkIdNumberValid = () => {
+    const checkIdNumberValid = async () => {
         // ตรวจสอบว่าเลขบัตรมีความยาว 13 หลักและเป็นตัวเลขทั้งหมด
         if (/^\d{13}$/.test(idCardNumber)) {
+
             // แปลงเลขบัตรเป็น Array ของตัวเลข
             const digits = idCardNumber.split("").map(Number);
 
@@ -34,9 +41,45 @@ export default function Verify() {
 
             // ตรวจสอบว่า Check Digit ตรงกับหลักที่ 13
             if (checkDigit === digits[12]) {
+
+                // เลขหลักที่ 2-3 ของบัตร
                 const code = digits[1] + "" + digits[2];
+
+                // ตรวจสอบว่าตรงกับรหัสของจังหวัด
                 if (code === provice) {
-                    Alert.alert("", "ถูกต้อง");
+                    // update ข้อมูลใน firestore
+                    try {
+                        // เช็คเลขบัตรซ้ำในฐานข้อมูล
+                        const querySnapshot = await firestore()
+                            .collection("users")
+                            .where("idCardNumber", "==", idCardNumber)
+                            .get();
+    
+                        if (querySnapshot.empty) {
+                            // อัปเดตข้อมูลใน Firestore
+                            await firestore()
+                                .collection("users")
+                                .doc(user.uid)
+                                .update({
+                                    idCardNumber: idCardNumber,
+                                    verify: true,
+                                });
+
+                            // อัปเดต user ใน AuthContext
+                            setUser((prevData) => ({
+                                ...prevData,
+                                idCardNumber: idCardNumber,
+                                verify: true,
+                            }));
+
+                            router.replace("/");
+                        } else {
+                            Alert.alert("ผิดพลาด", "เลขบัตรประชาชนนี้ถูกใช้ไปแล้ว");
+                        }
+                    } catch (error) {
+                        console.error("Error updating document: ", error);
+                        Alert.alert("ผิดพลาด", "เกิดข้อผิดพลาดในการยืนยันตัวตน");
+                    }
                 } else {
                     Alert.alert("", "ข้อมูลบัตรประชาชนไม่ถูกต้อง");
                 }
@@ -49,13 +92,13 @@ export default function Verify() {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-white px-7">
+        <SafeAreaView style={styles.container}>
             {/* เลขบัตรประชาชน */}
-            <Text className="font-kanit">เลขบัตรประชาชน</Text>
-            <View className="flex-row items-center mb-2 bg-[#FFF5F5] rounded-xl h-16 px-3 w-full">
+            <Text style={styles.label}>เลขบัตรประชาชน</Text>
+            <View style={styles.inputContainer}>
                 <AntDesign name="idcard" size={24} color="#A6A6A6" />
                 <TextInput
-                    className="flex-1 ml-2 text-xl font-kanit"
+                    style={styles.input}
                     value={idCardNumber}
                     onChangeText={setIdCardNumber}
                     keyboardType="number-pad"
@@ -63,8 +106,8 @@ export default function Verify() {
             </View>
 
             {/* จังหวัดที่ออกบัตร */}
-            <Text className="font-kanit">จังหวัดที่ออกบัตร</Text>
-            <View className="flex-row items-center mb-2 bg-[#FFF5F5] rounded-xl h-16 px-3 w-full">
+            <Text style={styles.label}>จังหวัดที่ออกบัตร</Text>
+            <View style={styles.inputContainer}>
                 <MaterialIcons name="location-city" size={24} color="#A6A6A6" />
                 <DropDownPicker
                     open={open}
@@ -87,7 +130,7 @@ export default function Verify() {
                     }}
                     labelStyle={{
                         fontFamily: "Kanit_400Regular",
-                        fontSize: 18,
+                        fontSize: 20,
                         color: "black",
                     }}
                 />
@@ -95,10 +138,50 @@ export default function Verify() {
             <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={checkIdNumberValid}
-                className="mt-5 bg-orange-400 h-12 items-center justify-center rounded-lg"
+                style={styles.button}
             >
-                <Text className="font-bold text-lg text-white">ยืนยัน</Text>
+                <Text style={styles.buttonText}>ยืนยัน</Text>
             </TouchableOpacity>
         </SafeAreaView>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1, 
+        paddingHorizontal: 18, 
+        backgroundColor: "white"
+    },
+    label: {
+        fontFamily: "Kanit_400Regular"
+    },
+    inputContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#FFF5F5",
+        marginBottom: 10,
+        borderRadius: 10,
+        height: 55,
+        paddingHorizontal: 10,
+        width: "100%",
+    },
+    input: {
+        flex: 1,
+        marginLeft: 10,
+        fontSize: 20,
+        fontFamily: "Kanit_400Regular",
+    },
+    button: {
+        marginTop: 20,
+        backgroundColor: "#fb923c",
+        height: 48,
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: 10
+    },
+    buttonText: {
+        fontFamily: "Kanit_600SemiBold",
+        fontSize: 18,
+        color: "white"
+    }
+})

@@ -33,9 +33,13 @@ export const AuthProvider = ({ children }) => {
                             profilePicture: data.photoURL || "",
                             role: "member",
                             status: true,
+                            verify: false,
+                            idCardNumber: "",
                         };
+                        // เพิ่มข้อมูลในฐานข้อมูล
                         await db.collection("users").doc(data.uid).set(newUser);
-                        setUser(newUser); // อัปเดต State `user` ด้วยข้อมูลที่เพิ่งสร้าง
+                        // อัปเดต State ด้วยข้อมูลที่สร้าง
+                        setUser(newUser); 
                     }
 
                     setLoggedIn(true);
@@ -53,7 +57,7 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     return (
-        <AuthContext.Provider value={{ user, isLoading, loggedIn }}>
+        <AuthContext.Provider value={{ user, setUser, isLoading, loggedIn }}>
             {children}
         </AuthContext.Provider>
     );

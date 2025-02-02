@@ -1,4 +1,5 @@
 import {
+    StyleSheet,
     Text,
     SafeAreaView,
     TouchableOpacity,
@@ -93,16 +94,10 @@ export default function Login() {
     };
 
     return (
-        <SafeAreaView
-            style={{
-                flex: 1,
-                justifyContent: "center",
-                alignItems: "center",
-            }}
-        >
+        <SafeAreaView style={styles.container}>
             <Image
                 source={require("../assets/images/activity_mate_logo.png")}
-                className="h-[150px] mb-[75px]"
+                style={styles.logo}
                 resizeMode="contain"
             />
 
@@ -110,14 +105,14 @@ export default function Login() {
             <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={signInGoogle}
-                className="flex flex-row h-[50px] w-[300px] bg-slate-50 justify-center items-center shadow-md shadow-black rounded-lg"
+                style={styles.button}
             >
                 <Image
                     source={require("../assets/icons/google.png")}
-                    className="h-[30px]"
+                    style={{ height: 30 }}
                     resizeMode="contain"
                 />
-                <Text className="text-xl font-kanit">
+                <Text style={styles.buttonText}>
                     เข้าสู่ระบบด้วย Google
                 </Text>
             </TouchableOpacity>
@@ -126,17 +121,45 @@ export default function Login() {
             <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={signInFacebook}
-                className="flex flex-row mt-5 h-[50px] w-[300px] bg-slate-50 justify-center items-center shadow-md shadow-black rounded-lg"
+                style={styles.button}
             >
                 <Image
                     source={require("../assets/icons/facebook.png")}
-                    className="h-[30px]"
+                    style={{ height: 30 }}
                     resizeMode="contain"
                 />
-                <Text className="text-xl font-kanit">
+                <Text style={styles.buttonText}>
                     เข้าสู่ระบบด้วย Facebook
                 </Text>
             </TouchableOpacity>
         </SafeAreaView>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "white"
+    },
+    logo: {
+        height: 150,
+        marginBottom: 75
+    },
+    button: {
+        flexDirection: "row",
+        height: 50,
+        width: 300,
+        backgroundColor: "#f8fafc",
+        justifyContent: "center",
+        alignItems: "center",
+        elevation: 5,
+        borderRadius: 5,
+        marginBottom: 15,
+    },
+    buttonText: {
+        fontFamily: "Kanit_400Regular",
+        fontSize: 18
+    }
+})

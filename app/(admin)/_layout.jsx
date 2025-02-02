@@ -10,7 +10,7 @@ export default function AdminLayout() {
     const { loggedIn } = useAuth();
 
     const logout = () => {
-        Alert.alert("", "ออกจากระบบ", [
+        Alert.alert("ออกจากระบบ", "ยืนยันการออกจากระบบ", [
             {
                 text: "ยกเลิก",
             },
@@ -57,7 +57,7 @@ export default function AdminLayout() {
                     headerTitle: "จัดการหมวดหมู่กิจกรรม",
                     headerTitleAlign: "center",
                     headerTitleStyle: {
-                        fontFamily: "Kanit_400Regular",
+                        fontFamily: "Kanit_600SemiBold",
                     },
                 }}
             />

@@ -12,7 +12,7 @@ export default function TabLayout() {
                 tabBarLabelStyle: {
                     fontSize: 14,
                     fontFamily: "Kanit_400Regular",
-                }, // ขนาดตัวอักษร
+                },
                 tabBarStyle: {
                     backgroundColor: "white",
                     height: 60,
@@ -60,7 +60,10 @@ export default function TabLayout() {
                     headerTitleAlign: "center",
                     headerShown: true,
                     headerTitleStyle: {
-                        fontFamily: "Kanit_400Regular", // ฟอนต์ที่ใช้ใน header
+                        fontFamily: "Kanit_400Regular",
+                    },
+                    headerTitleStyle: {
+                        fontFamily: "Kanit_600SemiBold",
                     },
                     tabBarIcon: ({ color }) => {
                         return (

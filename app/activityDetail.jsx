@@ -1,4 +1,4 @@
-import { View, Text, Image, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
+import { View, Text, Image, TouchableOpacity, ActivityIndicator, Alert, StyleSheet, Linking } from "react-native";
 import React, { useEffect, useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import { MaterialIcons, FontAwesome, AntDesign } from "@expo/vector-icons";
@@ -8,7 +8,6 @@ import { useAuth } from "../contexts/AuthContext";
 
 export default function ActivityDetail() {
     const params = useLocalSearchParams();
-
     const { user } = useAuth();
     const [activity, setActivity] = useState(null);
 
@@ -27,7 +26,7 @@ export default function ActivityDetail() {
         });
 
         return formattedStartDate;
-    }
+    };
 
     const cancelActivity = async () => {
         Alert.alert("", "ยืนยันยกเลิกกิจกรรม", [
@@ -36,20 +35,20 @@ export default function ActivityDetail() {
             },
             {
                 text: "ยืนยัน",
-                onPress: () => 
+                onPress: () =>
                     firestore()
                         .collection("activities")
                         .doc(params.id)
                         .delete()
                         .then(() => {
-                            router.replace("/(tabs)/home")
+                            router.replace("/(tabs)/home");
                         })
                         .catch((error) => {
                             console.error("Error delete:", error);
-                        })
+                        }),
             },
         ]);
-    }
+    };
 
     useEffect(() => {
         const getActivityData = async () => {
@@ -83,111 +82,109 @@ export default function ActivityDetail() {
     if (!activity) {
         // แสดง Loading เมื่อ activity ยังไม่มีข้อมูล
         return (
-            <SafeAreaView className="flex-1 justify-center items-center bg-white">
+            <SafeAreaView 
+                style={{ 
+                    flex: 1, 
+                    justifyContent: "center", 
+                    alignItems: "center", 
+                    backgroundColor: "white" 
+                }}
+            >
                 <ActivityIndicator size="large" color="#0000ff" />
-                <Text className="text-gray-500 mt-4">กำลังโหลดข้อมูล...</Text>
+                <Text style={{ color: "#6B7280", marginTop: 16 }}>กำลังโหลดข้อมูล...</Text>
             </SafeAreaView>
         );
     }
 
     return (
-        <SafeAreaView className="flex-1">
-            <View className="flex-1 justify-between bg-white px-4 py-6">
-                <View className="flex-1">
-                    <Text className="text-2xl font-kanitbold text-black">
-                        {activity.name}
-                    </Text>
-                    <View className="flex-row items-center justify-between mt-2">
-                        <Text className="text-gray-500 font-kanit">
+        <SafeAreaView style={styles.container}>
+            <View style={styles.contentContainer}>
+                <View style={{ flex: 1 }}>
+                    <Text style={styles.activityName}>{activity.name}</Text>
+                    <View style={styles.dateTimeContainer}>
+                        <Text style={styles.dateTimeText}>
                             {formatDateTime(activity.startDate)} - {formatDateTime(activity.endDate)}
                         </Text>
-                        <View className="flex-row items-center">
+                        <View style={styles.participantContainer}>
                             <AntDesign name="user" color="black" size={14} />
-                            <Text className="text-gray-500 ms-1 font-kanit">
-                                1/{activity.max}
-                            </Text>
+                            <Text style={styles.participantText}>1/{activity.max}</Text>
                         </View>
                     </View>
 
                     {/* Location */}
-                    <View className="flex-row items-center mt-4">
+                    <View style={styles.locationContainer}>
                         <MaterialIcons name="location-on" size={24} color="black" />
-                        <View className="ml-2">
-                            <Text className="font-kanitsemibold">
-                                {activity.locationName}
-                            </Text>
-                            <Text className="text-gray-500 font-kanit">
+                        <View style={{ marginLeft: 8 }}>
+                            <Text style={styles.locationName}>{activity.locationName}</Text>
+                            <Text style={styles.locationAddress}>
                                 {activity.subDistrict} {activity.district} {activity.provice}
                             </Text>
+                            {/* ปุ่มเปิดแผนที่ */}
+                            <TouchableOpacity 
+                                activeOpacity={0.8}
+                                onPress={() => {
+                                    const url = `https://www.google.com/maps/search/?api=1&query=${activity.latitund},${activity.longitund}`;
+                                    Linking.openURL(url);
+                                }}
+                            >
+                                <Text style={styles.buttonMap}>เปิดแผนที่</Text>
+                            </TouchableOpacity>
                         </View>
                     </View>
 
                     {/* Description */}
-                    <Text className="text-gray-700 mt-4 font-kanit text-lg">
-                        {activity.description}
-                    </Text>
+                    <Text style={styles.descriptionText}>{activity.description}</Text>
 
                     {/* Participant */}
-                    <View className="flex-row items-center mt-10">
+                    <View style={styles.ownerContainer}>
                         <Image
                             source={{ uri: activity.owner.profilePicture }}
-                            className="w-12 h-12 rounded-full"
+                            style={styles.ownerImage}
                         />
-                        <View className="ml-3">
-                            <Text className="text-black font-kanit">{activity.owner.username}</Text>
-                            <View className="flex-row items-center">
+                        <View style={{ marginLeft: 12 }}>
+                            <Text style={styles.ownerName}>{activity.owner.username}</Text>
+                            <View style={{ flexDirection: "row", alignItems: "center" }}>
                                 <FontAwesome name="star" size={16} color="#FFD700" />
-                                <Text className="text-gray-700 ml-1 font-kanit">4</Text>
+                                <Text style={styles.ratingText}>4</Text>
                             </View>
                         </View>
                     </View>
                 </View>
 
                 {/* Buttons */}
-                <View className="mt-8">
-                    {/* <TouchableOpacity activeOpacity={0.8} className="flex-row  justify-center bg-[#FE805C] rounded-full py-3">
-                        <Text className="ms-2 text-center text-white font-kanitbold">
-                            เข้าร่วมกิจกรรม
-                        </Text>
-                    </TouchableOpacity> */}
-                    <View className="pb-4 border-b border-gray-400">
-                        <TouchableOpacity activeOpacity={0.8} className="flex-row  justify-center bg-blue-500 rounded-full py-3">
+                <View style={{ marginBottom: 10 }}>
+                    <View style={styles.chatButtonContainer}>
+                        <TouchableOpacity activeOpacity={0.8} style={styles.chatButton}>
                             <MaterialIcons name="chat-bubble-outline" color="white" size={24} />
-                            <Text className="ms-2 text-center text-white font-kanitbold">
-                                สนทนา
-                            </Text>
+                            <Text style={styles.chatButtonText}>สนทนา</Text>
                         </TouchableOpacity>
                     </View>
                     {activity.owner.uid === user.uid && (
                         <View>
-                            <TouchableOpacity activeOpacity={0.8} className="bg-yellow-500 rounded-lg py-3 mt-4">
-                                <Text className="text-center text-white font-kanitbold">
-                                    สิ้นสุดกิจกรรม
-                                </Text>
+                            <TouchableOpacity activeOpacity={0.8} style={styles.endActivityButton}>
+                                <Text style={styles.buttonText}>สิ้นสุดกิจกรรม</Text>
                             </TouchableOpacity>
-                            <View className="flex-row gap-2 mt-2">
-                                <TouchableOpacity 
-                                    activeOpacity={0.8} 
-                                    onPress={() => router.push({
-                                        pathname: "editActivity",
-                                        params: {
-                                            id: params.id
-                                        }
-                                    })}
-                                    className="flex-1 bg-blue-500 rounded-lg py-3"
+                            <View style={styles.editCancelButtonContainer}>
+                                <TouchableOpacity
+                                    activeOpacity={0.8}
+                                    onPress={() =>
+                                        router.push({
+                                            pathname: "editActivity",
+                                            params: {
+                                                id: params.id,
+                                            },
+                                        })
+                                    }
+                                    style={styles.editButton}
                                 >
-                                    <Text className="text-center text-white font-kanitbold">
-                                        แก้ไข
-                                    </Text>
+                                    <Text style={styles.buttonText}>แก้ไข</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity 
-                                    activeOpacity={0.8} 
-                                    onPress={cancelActivity} 
-                                    className="flex-1 bg-red-500 rounded-lg py-3"
+                                <TouchableOpacity
+                                    activeOpacity={0.8}
+                                    onPress={cancelActivity}
+                                    style={styles.cancelButton}
                                 >
-                                    <Text className="text-center text-white font-kanitbold">
-                                        ยกเลิกกิจกรรม
-                                    </Text>
+                                    <Text style={styles.buttonText}>ยกเลิกกิจกรรม</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -197,3 +194,128 @@ export default function ActivityDetail() {
         </SafeAreaView>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: "white",
+    },
+    contentContainer: {
+        flex: 1,
+        justifyContent: "space-between",
+        paddingHorizontal: 16,
+    },
+    activityName: {
+        fontSize: 24,
+        fontFamily: "Kanit_600SemiBold",
+        color: "black",
+    },
+    dateTimeContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginTop: 8,
+    },
+    dateTimeText: {
+        color: "#6B7280",
+        fontFamily: "Kanit_400Regular",
+    },
+    participantContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+    participantText: {
+        color: "#6B7280",
+        marginLeft: 4,
+        fontFamily: "Kanit_400Regular",
+    },
+    locationContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginTop: 16,
+    },
+    locationName: {
+        fontFamily: "Kanit_600SemiBold",
+        color: "black",
+    },
+    locationAddress: {
+        color: "#6B7280",
+        fontFamily: "Kanit_400Regular",
+    },
+    descriptionText: {
+        color: "#374151",
+        marginTop: 16,
+        fontFamily: "Kanit_400Regular",
+        fontSize: 18,
+    },
+    ownerContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginTop: 40,
+    },
+    ownerImage: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+    },
+    ownerName: {
+        color: "black",
+        fontFamily: "Kanit_400Regular",
+    },
+    ratingText: {
+        color: "#374151",
+        marginLeft: 4,
+        fontFamily: "Kanit_400Regular",
+    },
+    chatButtonContainer: {
+        paddingBottom: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: "#9CA3AF",
+    },
+    chatButton: {
+        flexDirection: "row",
+        justifyContent: "center",
+        backgroundColor: "#3B82F6",
+        borderRadius: 20,
+        paddingVertical: 12,
+    },
+    chatButtonText: {
+        marginLeft: 8,
+        color: "white",
+        fontSize: 16,
+        fontFamily: "Kanit_700Bold",
+    },
+    endActivityButton: {
+        backgroundColor: "#F59E0B",
+        borderRadius: 8,
+        paddingVertical: 12,
+        marginTop: 16,
+    },
+    editCancelButtonContainer: {
+        flexDirection: "row",
+        gap: 8,
+        marginTop: 8,
+    },
+    editButton: {
+        flex: 1,
+        borderRadius: 8,
+        paddingVertical: 12,
+        backgroundColor: "#3B82F6",
+    },
+    cancelButton: {
+        flex: 1,
+        borderRadius: 8,
+        paddingVertical: 12,
+        backgroundColor: "#EF4444",
+    },
+    buttonText: {
+        textAlign: "center",
+        color: "white",
+        fontSize: 14,
+        fontFamily: "Kanit_700Bold",
+    },
+    buttonMap: {
+        color: "blue",
+        fontFamily: "Kanit_400Regular"
+    }
+});

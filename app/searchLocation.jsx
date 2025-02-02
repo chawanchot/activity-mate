@@ -1,5 +1,5 @@
 import "react-native-get-random-values";
-import { View, Text } from "react-native";
+import { StyleSheet, View, Text } from "react-native";
 import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
@@ -36,9 +36,9 @@ export default function SearchLocation() {
 
         const locationData = {
             name: details.name,
-            subdistrict,
-            district,
-            provice,
+            subdistrict: subdistrict.replaceAll(" ", ""),
+            district: district.replaceAll(" ", ""),
+            provice: provice.replaceAll(" ", ""),
             location,
         };
 
@@ -53,11 +53,9 @@ export default function SearchLocation() {
         });
     };
 
-    console.log(params);
-
     return (
-        <SafeAreaView className="h-full bg-white">
-            <View className="h-full p-4">
+        <SafeAreaView style={styles.container}>
+            <View style={styles.searchContainer}>
                 <GooglePlacesAutocomplete
                     placeholder="ค้นหาสถานที่"
                     onPress={placeSelect}
@@ -77,6 +75,7 @@ export default function SearchLocation() {
                             height: 50,
                             fontSize: 18,
                             backgroundColor: "#FFF5F5",
+                            fontFamily: "Kanit_400Regular"
                         },
                         listView: {
                             marginTop: 10,
@@ -87,10 +86,10 @@ export default function SearchLocation() {
                     }}
                     renderRow={(data) => (
                         <View>
-                            <Text className="text-black text-lg font-semibold">
+                            <Text style={styles.placeName}>
                                 {data.structured_formatting.main_text}
                             </Text>
-                            <Text className="text-black text-base">
+                            <Text style={styles.placeDetail}>
                                 {data.structured_formatting.secondary_text}
                             </Text>
                         </View>
@@ -100,3 +99,24 @@ export default function SearchLocation() {
         </SafeAreaView>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: "white"
+    },
+    searchContainer: {
+        height: "100%",
+        paddingHorizontal: 16,
+    },
+    placeName: {
+        color: "black",
+        fontSize: 16,
+        fontFamily: "Kanit_600SemiBold"
+    },
+    placeDetail: {
+        color: "black",
+        fontSize: 14,
+        fontFamily: "Kanit_400Regular"
+    }
+})

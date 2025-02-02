@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
+    StyleSheet,
     SafeAreaView,
     Text,
     TouchableOpacity,
@@ -64,7 +65,7 @@ export default function Category() {
     };
 
     const enableCategory = (id, name) => {
-        Alert.alert("", "ยืนยันเปิดใช้งานหมวดหมู่" + name, [
+        Alert.alert("เปิดใช้งานหมวดหมู่กิจกรรม", "ยืนยันเปิดใช้งานหมวดหมู่" + name, [
             {
                 text: "ยกเลิก",
             },
@@ -98,13 +99,13 @@ export default function Category() {
     }, []);
 
     return (
-        <SafeAreaView className="flex-1 bg-white p-2">
+        <SafeAreaView style={styles.container}>
             <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={() => setShowAddModal(true)}
-                className="my-2 bg-['#5C77FE'] h-[50px] rounded-lg flex justify-center items-center"
+                style={styles.addButton}
             >
-                <Text className="text-white text-lg font-kanitsemibold">
+                <Text style={styles.addButtonText}>
                     เพิ่มหมวดหมู่กิจกรรม
                 </Text>
             </TouchableOpacity>
@@ -114,22 +115,22 @@ export default function Category() {
                 keyExtractor={(item) => item.id}
                 contentContainerStyle={{ padding: 3}}
                 renderItem={({ item }) => (
-                    <View className="bg-white p-2 rounded-lg shadow-xl mb-2">
-                        <View className="flex-row justify-between items-center">
-                            <View className="w-[75%]">
-                                <Text className="text-xl font-kanitsemibold">
+                    <View style={styles.listContainer}>
+                        <View style={styles.listContent}>
+                            <View style={{ width: "75%" }}>
+                                <Text style={styles.name}>
                                     {item.name}
                                 </Text>
                             </View>
-                            <View className="w-[25%] flex justify-center items-center px-2">
+                            <View style={styles.buttonContainer}>
                                 <TouchableOpacity
                                     activeOpacity={0.8}
                                     onPress={() =>
                                         openEditModal(item.id, item.name)
                                     }
-                                    className="mb-1 bg-['#FFC300'] w-full h-[30px] rounded-md flex justify-center items-center"
+                                    style={[styles.manageBtn, { backgroundColor: "#FFC300" }]}
                                 >
-                                    <Text className="text-black font-kanit">แก้ไข</Text>
+                                    <Text style={[styles.manageBtnText, { color: "black" }]}>แก้ไข</Text>
                                 </TouchableOpacity>
                                 {item.status ? (
                                     <TouchableOpacity
@@ -137,9 +138,9 @@ export default function Category() {
                                         onPress={() =>
                                             cancelCategory(item.id, item.name)
                                         }
-                                        className="bg-['#FF6200'] w-full h-[30px] rounded-md flex justify-center items-center"
+                                        style={[styles.manageBtn, { backgroundColor: "#FF6200" }]}
                                     >
-                                        <Text className="text-white font-kanit">
+                                        <Text style={styles.manageBtnText}>
                                             ยกเลิก
                                         </Text>
                                     </TouchableOpacity>
@@ -149,9 +150,9 @@ export default function Category() {
                                         onPress={() =>
                                             enableCategory(item.id, item.name)
                                         }
-                                        className="bg-['#0095FF'] w-full h-[30px] rounded-md flex justify-center items-center"
+                                        style={[styles.manageBtn, { backgroundColor: "#0095FF" }]}
                                     >
-                                        <Text className="text-white font-kanit">
+                                        <Text style={styles.manageBtnText}>
                                             เปิดใช้งาน
                                         </Text>
                                     </TouchableOpacity>
@@ -172,15 +173,15 @@ export default function Category() {
                     setShowAddModal(!showAddModal);
                 }}
             >
-                <View className="flex-1 justify-center items-center">
-                    <View className="bg-white shadow-lg p-4 w-[80%] min-h-[85px] flex justify-center items-center rounded-lg">
-                        <Text className="font-kanitsemibold text-lg">
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalHeader}>
                             เพิ่มหมวดหมู่กิจกรรม
                         </Text>
                         <TouchableOpacity
                             activeOpacity={0.8}
                             onPress={() => setShowAddModal(false)}
-                            className="absolute top-0 right-0"
+                            style={styles.modalCloseIcon}
                         >
                             <MaterialIcons
                                 name="close"
@@ -188,27 +189,23 @@ export default function Category() {
                                 color="black"
                             />
                         </TouchableOpacity>
-                        <View className="flex flex-row items-center bg-[#f1f1f1] rounded-xl h-16 px-3 mt-2 w-full">
-                            <MaterialIcons
-                                name="category"
-                                size={24}
-                                color="#373F78"
-                            />
+                        <View style={styles.inputContainer}>
+                            <MaterialIcons name="category" size={24} color="#373F78" />
                             <TextInput
-                                className="text-black text-lg ml-2 font-kanit"
+                                style={styles.input}
                                 placeholder="ชื่อหมวดหมู่"
                                 placeholderTextColor="#373F78"
                                 value={addInput}
                                 onChangeText={setAddInput}
                             />
                         </View>
-                        <View className="w-full items-end mt-4">
+                        <View style={styles.modalFooter}>
                             <TouchableOpacity
                                 activeOpacity={0.8}
                                 onPress={addCategory}
-                                className="mb-1 bg-['#5476FF'] w-16 h-[35px] rounded-md flex justify-center items-center"
+                                style={styles.modalBtn}
                             >
-                                <Text className="text-white font-kanitsemibold">
+                                <Text style={styles.modalBtnText}>
                                     ยืนยัน
                                 </Text>
                             </TouchableOpacity>
@@ -227,43 +224,35 @@ export default function Category() {
                     setShowEditModal(!showEditModal);
                 }}
             >
-                <View className="flex-1 justify-center items-center">
-                    <View className="bg-white p-4 shadow-lg w-[80%] min-h-[85px] flex justify-center items-center rounded-lg">
-                        <Text className="font-kanitsemibold text-lg">
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalHeader}>
                             แก้ไขหมวดหมู่กิจกรรม
                         </Text>
                         <TouchableOpacity
                             activeOpacity={0.8}
                             onPress={() => setShowEditModal(false)}
-                            className="absolute top-0 right-0"
+                            style={styles.modalCloseIcon}
                         >
-                            <MaterialIcons
-                                name="close"
-                                size={24}
-                                color="black"
-                            />
+                            <MaterialIcons name="close" size={24} color="black" />
                         </TouchableOpacity>
-                        <View className="flex flex-row items-center bg-[#f1f1f1] rounded-xl h-16 px-3 mt-2 w-full">
-                            <MaterialIcons
-                                name="category"
-                                size={24}
-                                color="#373F78"
-                            />
+                        <View style={styles.inputContainer}>
+                            <MaterialIcons name="category" size={24} color="#373F78" />
                             <TextInput
-                                className="text-black text-lg ml-2 font-kanit"
+                                style={styles.input}
                                 placeholder="ชื่อหมวดหมู่"
                                 placeholderTextColor="#373F78"
                                 value={editInput}
                                 onChangeText={setEditInput}
                             />
                         </View>
-                        <View className="w-full items-end mt-4">
+                        <View style={styles.modalFooter}>
                             <TouchableOpacity
                                 activeOpacity={0.8}
                                 onPress={submitEdit}
-                                className="mb-1 bg-['#5476FF'] w-16 h-[35px] rounded-md flex justify-center items-center"
+                                style={styles.modalBtn}
                             >
-                                <Text className="text-white font-kanitsemibold">
+                                <Text style={styles.modalBtnText}>
                                     ยืนยัน
                                 </Text>
                             </TouchableOpacity>
@@ -274,3 +263,116 @@ export default function Category() {
         </SafeAreaView>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: "white",
+        padding: 6,
+    },
+    addButton: {
+        marginVertical: 6,
+        backgroundColor: "#5C77FE",
+        height: 50,
+        borderRadius: 10,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    addButtonText: {
+        color: "white",
+        fontSize: 16,
+        fontFamily: "Kanit_600SemiBold"
+    },
+    listContainer: {
+        backgroundColor: "white",
+        padding: 6,
+        borderRadius: 10,
+        elevation: 5,
+        marginBottom: 6
+    },
+    listContent: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center"
+    },
+    name: {
+        fontSize: 18,
+        fontFamily: "Kanit_600SemiBold"
+    },
+    buttonContainer: {
+        width: "25%",
+        justifyContent: "center",
+        alignItems: "center",
+        paddingHorizontal: 6,
+        gap: 3
+    },
+    manageBtn: {
+        width: "100%",
+        height: 30,
+        borderRadius: 5,
+        justifyContent: "center",
+        alignItems: "center"
+    },
+    manageBtnText: {
+        color: "white",
+        fontFamily: "Kanit_400Regular"
+    },
+    modalContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center"
+    },
+    modalContent: {
+        backgroundColor: "white",
+        elevation: 5,
+        padding: 14,
+        width: "80%",
+        minHeight: 85,
+        justifyContent: "center",
+        alignItems: "center",
+        borderRadius: 10
+    },
+    modalHeader: {
+        fontFamily: "Kanit_600SemiBold",
+        fontSize: 16
+    },
+    modalCloseIcon: {
+        position: "absolute",
+        top: 10,
+        right: 10
+    },
+    inputContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#FFF5F5",
+        marginTop: 10,
+        borderRadius: 10,
+        height: 55,
+        paddingHorizontal: 10,
+        width: "100%",
+    },
+    input: {
+        flex: 1,
+        marginLeft: 10,
+        fontSize: 18,
+        fontFamily: "Kanit_400Regular",
+    },
+    modalFooter: {
+        width: "100%",
+        alignItems: "flex-end",
+        marginTop: 14
+    },
+    modalBtn: {
+        marginBottom: 2,
+        backgroundColor: "#5476FF",
+        width: 62,
+        height: 35,
+        borderRadius: 5,
+        justifyContent: "center",
+        alignItems: "center"
+    },
+    modalBtnText: {
+        color: "white",
+        fontFamily: "Kanit_600SemiBold"
+    }
+})

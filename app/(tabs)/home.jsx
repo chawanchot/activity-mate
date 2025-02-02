@@ -1,4 +1,14 @@
-import { View, Text, Image, TouchableOpacity, FlatList, Alert } from "react-native";
+import { 
+    StyleSheet, 
+    View, 
+    Text, 
+    Image, 
+    TouchableOpacity, 
+    FlatList, 
+    Alert, 
+    ActivityIndicator,
+    RefreshControl
+} from "react-native";
 import React, { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../contexts/AuthContext";
@@ -9,12 +19,15 @@ import auth from "@react-native-firebase/auth";
 
 export default function MemberHome() {
     const { user, loggedIn } = useAuth();
-    const [tab, setTab] = useState(false);
+
+    const [tab, setTab] = useState("owner");
+    const [isLoading, setIsLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
 
     const [activityList, setActivityList] = useState([]);
 
     const logout = () => {
-        Alert.alert("", "ออกจากระบบ", [
+        Alert.alert("ออกจากระบบ", "ยืนยันการออกจากระบบ", [
             {
                 text: "ยกเลิก",
             },
@@ -30,182 +43,317 @@ export default function MemberHome() {
         ]);
     };
 
+    const getOwnerActivity = async () => {
+        setIsLoading(true);
+        try {
+            const getData = await firestore()
+                .collection("activities")
+                .where("createdByUserID", "==", user.uid)
+                .orderBy("startDate", "asc")
+                .get();
+
+            const dataActivity = [];
+
+            for (const doc of getData.docs) {
+                const data = doc.data();
+
+                // ดึง category จาก categoryID
+                const getCategory = await firestore()
+                    .collection("category")
+                    .doc(data.categoryID)
+                    .get();
+
+                const category = getCategory.data();
+
+                const firebaseTimestamp = new firestore.Timestamp(
+                    data.startDate.seconds,
+                    data.startDate.nanoseconds
+                );
+                const datetime = firebaseTimestamp.toDate();
+
+                const formattedDate = datetime.toLocaleString("th-TH", {
+                    timeZone: "Asia/Bangkok",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                });
+
+                dataActivity.push({
+                    id: doc.id,
+                    name: data.name,
+                    category: category.name,
+                    description: data.description,
+                    max: data.max,
+                    locationName: data.locationName,
+                    subdistric: data.subdistric,
+                    distric: data.distric,
+                    provice: data.provice,
+                    startDate: formattedDate,
+                });
+            }
+
+            setActivityList(dataActivity);
+        } catch (error) {
+            console.log("fetch Data error: ", error)
+        }
+        setIsLoading(false);
+    };
+
+    const onRefresh = () => {
+        setRefreshing(true);
+
+        getOwnerActivity();
+
+        setRefreshing(false);
+    };
+
+    useEffect(() => {
+        if (tab === "owner") {
+            getOwnerActivity();
+        } else {
+            setActivityList([]);
+        }
+    }, [tab]);
+
+    // ออกจากระบบให้กลับไปหน้า login
     useEffect(() => {
         if (!loggedIn) {
             router.replace("/login");
         }
     }, [loggedIn]);
 
-    useEffect(() => {
-        const getActivity = async () => {
-            try {
-                const getData = await firestore()
-                    .collection("activities")
-                    .where("createdByUserID", "==", user.uid)
-                    .get();
-
-                const dataActivity = [];
-
-                for (const doc of getData.docs) {
-                    const data = doc.data();
-
-                    // ดึง category จาก categoryID
-                    const getCategory = await firestore()
-                        .collection("category")
-                        .doc(data.categoryID)
-                        .get();
-
-                    const category = getCategory.data();
-
-                    const firebaseTimestamp = new firestore.Timestamp(
-                        data.startDate.seconds,
-                        data.startDate.nanoseconds
-                    );
-                    const datetime = firebaseTimestamp.toDate();
-
-                    const formattedDate = datetime.toLocaleString("th-TH", {
-                        timeZone: "Asia/Bangkok",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                    });
-
-                    dataActivity.push({
-                        id: doc.id,
-                        name: data.name,
-                        category: category.name,
-                        description: data.description,
-                        max: data.max,
-                        locationName: data.locationName,
-                        subdistric: data.subdistric,
-                        distric: data.distric,
-                        provice: data.provice,
-                        startDate: formattedDate,
-                    });
-                }
-
-                setActivityList(dataActivity);
-            } catch (error) {
-                console.log("fetch Data error: ", error)
-            }
-        };
-
-        getActivity();
-    }, [tab]);
-
     if (!user) {
         return null; // หยุดการเรนเดอร์เมื่อ user เป็น null
     }
 
     return (
-        <SafeAreaView className="flex-1">
-            <View className="h-full bg-white pt-5">
+        <SafeAreaView style={{ flex: 1 }}>
+            <View style={styles.container}>
                 {/* โปรไฟล์ */}
-                <View className="flex-row justify-between p-6">
-                    <View>
-                        <Text className="font-kanitsemibold text-2xl">
-                            {user.username}
-                        </Text>
-                        <TouchableOpacity onPress={logout}>
-                            <MaterialIcons
-                                name="logout"
-                                size={30}
-                                color="red"
-                            />
-                        </TouchableOpacity>
-                    </View>
+                <View style={styles.headerContainer}>
+                    {/* รูปโปรไฟล์ */}
                     <Image
                         source={{ uri: user.profilePicture }}
-                        className="w-[120px] h-[120px] object-contain rounded-lg"
+                        style={styles.profileImg}
                     />
+                    {/* ชื่อผู้ใช้และปุ่ม */}
+                    <View style={{ marginTop: 10 }}>
+                        {/* ชื่อผู้ใช้ */}
+                        <Text style={styles.username}>{user.username}</Text>
+                        <View style={styles.buttonContainer}>
+                            {/* ปุ่มแก้ไขข้อมูล */}
+                            <TouchableOpacity onPress={() => router.push("/editProfile")}>
+                                <Text style={styles.profileEditBtn}>แก้ไขข้อมูล</Text>
+                            </TouchableOpacity>
+                            {/* ปุ่มออกจากระบบ */}
+                            <TouchableOpacity onPress={logout}>
+                                <Text style={styles.profileLogoutBtn}>ออกจากระบบ</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
                 </View>
 
                 {/* แท็บ */}
-                <View className="flex-row border-b border-gray-200">
+                <View style={styles.tabContainer}>
                     <TouchableOpacity
-                        onPress={() => setTab(true)}
-                        className={`flex-1 items-center p-2 ${tab ? "border-b-2 border-black" : ""}`}
+                        onPress={() => setTab("join")}
+                        style={[styles.tab, tab === "join" && styles.activeTab]}
                     >
-                        <Text
-                            className={`${tab ? "font-kanitsemibold" : "text-gray-400 font-kanit"}`}
-                        >
+                        <Text style={[styles.tabText, tab === "join" && styles.activeTabText]}>
                             การเข้าร่วม
                         </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                        onPress={() => setTab(false)}
-                        className={`flex-1 items-center p-2 ${!tab ? "border-b-2 border-black" : ""}`}
+                        onPress={() => setTab("owner")}
+                        style={[styles.tab, tab === "owner" && styles.activeTab]}
                     >
-                        <Text className={`${!tab ? "font-kanitsemibold" : "text-gray-400 font-kanit"}`}>
+                        <Text style={[styles.tabText, tab === "owner" && styles.activeTabText]}>
                             กิจกรรมที่จัด
                         </Text>
                     </TouchableOpacity>
                 </View>
 
-                {/* เนื้อหา */}
-                <FlatList
-                    data={activityList}
-                    renderItem={({item}) => (
-                        <TouchableOpacity 
-                            activeOpacity={0.8} 
-                            onPress={() => router.push({
-                                pathname: "activityDetail",
-                                params: {
-                                    id: item.id
-                                }
-                            })}
-                        >
-                            <View className="bg-white rounded-lg shadow-md mb-4 p-2 h-[150px]">
-                                {/* Header: จำนวนผู้เข้าร่วม */}
-                                <View className="flex-row items-center justify-between">
-                                    <View className="flex-row items-center">
-                                        <AntDesign name="user" color="black" size={14} />
-                                        <Text className="text-gray-500 text-base ms-1 font-kanitsemibold">
-                                            1/{item.max}
+                {/* กำลังโหลดข้อมูล */}
+                {isLoading ? (
+                    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                        <ActivityIndicator size="large" color="#0000ff" />
+                        <Text style={{ fontFamily: "Kanit_600SemiBold", marginTop: 10 }}>กำลังโหลดข้อมูล...</Text>
+                    </View>
+                ) : (
+                    // รายการกิจกรรม
+                    <FlatList
+                        data={activityList}
+                        renderItem={({item}) => (
+                            <TouchableOpacity 
+                                activeOpacity={0.8} 
+                                onPress={() => router.push({
+                                    pathname: "activityDetail",
+                                    params: {
+                                        id: item.id
+                                    }
+                                })}
+                            >
+                                <View style={styles.listContainer}>
+                                    {/* Header: จำนวนผู้เข้าร่วม */}
+                                    <View style={{flexDirection: "row", alignItems: "center", justifyContent: "space-between"}}>
+                                        <View style={{flexDirection: "row", alignItems: "center"}}>
+                                            <AntDesign name="user" color="black" size={14} />
+                                            <Text style={styles.activityHead}>
+                                                1/{item.max}
+                                            </Text>
+                                        </View>
+                                        <Text style={styles.activityHead}>
+                                            {item.startDate}
                                         </Text>
                                     </View>
-                                    <Text className="text-gray-500 text-base ms-1 font-kanitsemibold">
-                                        {item.startDate}
-                                    </Text>
-                                </View>
 
-                                {/* ชื่อกิจกรรม */}
-                                <Text className="text-black font-kanitbold text-xl mb-1">
-                                    {item.name}
-                                </Text>
-
-                                {/* คำอธิบายกิจกรรม */}
-                                <Text
-                                    className="text-gray-700 text-base font-kanit"
-                                    numberOfLines={2}
-                                >
-                                    {item.description}
-                                </Text>
-
-                                <View className="flex-row items-center justify-between mt-auto">
-                                    {/* หมวดหมู่ */}
-                                    <Text className="text-sm text-white bg-red-500 px-2 py-1 rounded-xl font-kanitsemibold">
-                                        {item.category}
+                                    {/* ชื่อกิจกรรม */}
+                                    <Text style={styles.activityName}>
+                                        {item.name}
                                     </Text>
 
-                                    {/* สถานที่ */}
-                                    <View className="flex-row items-center">
-                                        <MaterialIcons name="location-on" color="black" size={18} />
-                                        <Text className="text-gray-600 text-base font-kanit">
-                                            {item.locationName}
+                                    {/* คำอธิบายกิจกรรม */}
+                                    <Text style={styles.activityDetail} numberOfLines={2}>
+                                        {item.description}
+                                    </Text>
+
+                                    <View style={styles.activityFooter}>
+                                        {/* หมวดหมู่ */}
+                                        <Text style={styles.activityCategory}>
+                                            {item.category}
                                         </Text>
+
+                                        {/* สถานที่ */}
+                                        <View style={{flexDirection: "row", alignItems: "center"}}>
+                                            <MaterialIcons name="location-on" color="black" size={18} />
+                                            <Text style={styles.activityPlace}>
+                                                {item.locationName}
+                                            </Text>
+                                        </View>
                                     </View>
                                 </View>
-                            </View>
-                        </TouchableOpacity>
-                    )}
-                    keyExtractor={(item) => item.id}
-                    contentContainerStyle={{ padding: 8}}
-                    showsVerticalScrollIndicator={false}
-                />
+                            </TouchableOpacity>
+                        )}
+                        keyExtractor={(item) => item.id}
+                        contentContainerStyle={{ padding: 8}}
+                        showsVerticalScrollIndicator={false}
+                        refreshControl={
+                            <RefreshControl
+                                refreshing={refreshing}
+                                onRefresh={onRefresh}
+                            />
+                        }
+                    />
+                )}
             </View>
         </SafeAreaView>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        height: "100%", 
+        backgroundColor: "white", 
+        paddingTop: 18
+    },
+    headerContainer: {
+        alignItems: "center",
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+    },
+    username: {
+        margin: "auto",
+        fontFamily: "Kanit_600SemiBold",
+        fontSize: 22,
+    },
+    buttonContainer: {
+        flexDirection: "row", 
+        justifyContent: "center", 
+        gap: 50,
+        marginTop: 10
+    },
+    profileEditBtn: {
+        fontFamily: "Kanit_600SemiBold",
+        color: "blue"
+    },
+    profileLogoutBtn: {
+        fontFamily: "Kanit_600SemiBold",
+        color: "red",
+    },
+    tabContainer: {
+        flexDirection: "row",
+        borderBottomWidth: 1,
+        borderBottomColor: "#9CA3AF",
+    },
+    tab: {
+        flex: 1,
+        alignItems: "center",
+        padding: 8,
+        },
+    activeTab: {
+        borderBottomWidth: 2,
+        borderBottomColor: "black",
+    },
+    tabText: {
+        color: "#9CA3AF",
+        fontFamily: "Kanit_400Regular",
+    },
+    activeTabText: {
+        color: "black",
+        fontFamily: "Kanit_600SemiBold",
+    },
+    profileImg: {
+        width: 120,
+        height: 120,
+        objectFit: "contain",
+        borderRadius: 15,
+        elevation: 4
+    },
+    listContainer: {
+        backgroundColor: "white",
+        borderRadius: 10,
+        elevation: 5,
+        marginBottom: 5,
+        padding: 8,
+        height: 150
+    },
+    activityHead: {
+        color: "#6b7280",
+        fontSize: 14,
+        marginLeft: 4,
+        fontFamily: "Kanit_600SemiBold"
+    },
+    activityName: {
+        fontFamily: "Kanit_700Bold",
+        color: "black",
+        fontSize: 18,
+        marginBottom: 4,
+    },
+    activityDetail: {
+        color: "#57595c",
+        fontSize: 14,
+        fontFamily: "Kanit_600SemiBold"
+    },
+    activityFooter: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginTop: "auto"
+    },
+    activityCategory: {
+        fontSize: 12,
+        color: "white",
+        backgroundColor: "#ef4444",
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 10,
+        fontFamily: "Kanit_600SemiBold"
+    },
+    activityPlace: {
+        color: "#57595c",
+        fontSize: 14,
+        fontFamily: "Kanit_400Regular"
+    }
+})
