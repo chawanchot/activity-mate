@@ -70,6 +70,7 @@ export default function MemberCreateActivity() {
                 longitund: place.location.lng,
                 startDate: startTimestamp,
                 endDate: endTimestamp,
+                status: "ongoing",
             })
             .then(() => {
                 console.log("Activity saved successfully!");

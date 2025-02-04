@@ -11,7 +11,7 @@ export default function Index() {
             if (!loggedIn) {
                 router.replace("/login");
             } else if (!user?.verify) {
-                router.replace("/verify");
+                router.replace("/verifyOtp");
             } else if (user?.role === "admin") {
                 router.replace("/(admin)/home");
             } else {

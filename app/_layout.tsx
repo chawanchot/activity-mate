@@ -38,6 +38,17 @@ export default function RootLayout() {
                     }}
                 />
                 <Stack.Screen
+                    name="verifyOtp"
+                    options={{
+                        headerShown: true,
+                        headerTitle: "ยืนยันตัวตน",
+                        headerTitleAlign: "center",
+                        headerTitleStyle: {
+                            fontFamily: "Kanit_600SemiBold",
+                        },
+                    }}
+                />
+                <Stack.Screen
                     name="searchLocation"
                     options={{
                         headerShown: true,
