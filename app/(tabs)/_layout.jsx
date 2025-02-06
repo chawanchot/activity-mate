@@ -25,7 +25,14 @@ export default function TabLayout() {
                 name="seachActivity"
                 options={{
                     title: "ค้นหากิจกรรม",
-                    headerShown: false,
+                    headerTitleAlign: "center",
+                    headerShown: true,
+                    headerTitleStyle: {
+                        fontFamily: "Kanit_400Regular",
+                    },
+                    headerTitleStyle: {
+                        fontFamily: "Kanit_600SemiBold",
+                    },
                     tabBarIcon: ({ color }) => {
                         return (
                             <MaterialIcons

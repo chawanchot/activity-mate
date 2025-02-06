@@ -23,23 +23,21 @@ export const AuthProvider = ({ children }) => {
                     const userDoc = await db.collection("users").doc(data.uid).get();
 
                     if (userDoc.exists) {
-                        setUser(userDoc.data()); // อัปเดต State `user` ด้วยข้อมูลจาก Firestore
+                        setUser({uid: data.uid, ...userDoc.data()}); // อัปเดต State `user` ด้วยข้อมูลจาก Firestore
                     } else {
                         // ถ้าไม่มีข้อมูลใน Firestore ให้สร้างใหม่
                         const newUser = {
-                            uid: data.uid,
                             username: data.displayName || "Unknown User",
                             email: data.email,
                             profilePicture: data.photoURL || "",
                             role: "member",
                             status: true,
-                            verify: false,
                             idCardNumber: "",
                         };
                         // เพิ่มข้อมูลในฐานข้อมูล
                         await db.collection("users").doc(data.uid).set(newUser);
                         // อัปเดต State ด้วยข้อมูลที่สร้าง
-                        setUser(newUser); 
+                        setUser({uid: data.uid, ...newUser}); 
                     }
 
                     setLoggedIn(true);

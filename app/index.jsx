@@ -10,9 +10,9 @@ export default function Index() {
         if (!isLoading) {
             if (!loggedIn) {
                 router.replace("/login");
-            } else if (!user?.verify) {
-                router.replace("/verifyOtp");
-            } else if (user?.role === "admin") {
+            } else if (!user.idCardNumber) {
+                router.replace("/verify");
+            } else if (user.role === "admin") {
                 router.replace("/(admin)/home");
             } else {
                 router.replace("/(tabs)/home");

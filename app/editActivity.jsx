@@ -9,10 +9,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useAuth } from "../contexts/AuthContext"
 
 export default function EditActivity() {
-    const dbActivities = firestore().collection("activities");
-    const dbCategory = firestore().collection("category");
     const params = useLocalSearchParams(); 
-    const { user } = useAuth();
     const [loading, setLoading] = useState(true);
 
     // วันที่/เวลา เริ่มกิจกรรม
@@ -102,69 +99,65 @@ export default function EditActivity() {
         return datetime;
     }
 
-    useEffect(() => {
-        const getCategory = async () => {
-            try {
-                const fetchCategory = await firestore()
-                    .collection("category")
-                    .get();
-        
-                const dataCategory = [];
+    const getActivityData = async () => {
+        setLoading(true);
+        try {
+            const fetchActivity = await firestore()
+                .collection("activities")
+                .doc(params.id)
+                .get();
 
-                for (const doc of fetchCategory.docs) {
-                    const data = doc.data();
+            const activityData = fetchActivity.data();
 
-                    dataCategory.push({
-                        id: doc.id,
-                        ...data
-                    });
-                }
-        
-                setCategories(dataCategory);
-            } catch (error) {
-                console.log("fetch category error: ", error);
+            if (activityData) {
+                setName(activityData.name);
+                setDescription(activityData.description);
+                setMax(activityData.max.toString());
+                setSelectedCategory(activityData.categoryID);
+                setPlace({
+                    name: activityData.locationName,
+                    subdistrict: activityData.subDistrict,
+                    district: activityData.district,
+                    provice: activityData.provice,
+                    location: {
+                        lat: activityData.latitund,
+                        lng: activityData.longitund
+                    },
+                })
+                setStartDate(convertDateTime(activityData.startDate));
+                setStartTime(convertDateTime(activityData.startDate));
+                setEndDate(convertDateTime(activityData.endDate));
+                setEndTime(convertDateTime(activityData.endDate));
             }
+        } catch (error) {
+            console.log("fetch activity data error: ", error);
         }
 
-        const getActivityData = async () => {
-            setLoading(true);
-            try {
-                const fetchActivity = await firestore()
-                    .collection("activities")
-                    .doc(params.id)
-                    .get();
+        setLoading(false);
+    };
 
-                const activityData = fetchActivity.data();
+    useEffect(() => {
+        getActivityData()
 
-                if (activityData) {
-                    setName(activityData.name);
-                    setDescription(activityData.description);
-                    setMax(activityData.max.toString());
-                    setSelectedCategory(activityData.categoryID);
-                    setPlace({
-                        name: activityData.locationName,
-                        subdistrict: activityData.subDistrict,
-                        district: activityData.district,
-                        provice: activityData.provice,
-                        location: {
-                            lat: activityData.latitund,
-                            lng: activityData.longitund
-                        },
-                    })
-                    setStartDate(convertDateTime(activityData.startDate));
-                    setStartTime(convertDateTime(activityData.startDate));
-                    setEndDate(convertDateTime(activityData.endDate));
-                    setEndTime(convertDateTime(activityData.endDate));
+        const getCategory = firestore()
+            .collection("category")
+            .where("status", "!=", false)
+            .onSnapshot(
+                (snapshot) => {
+                    const dataCategory = snapshot.docs.map((doc) => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                    
+                    setCategories(dataCategory);
+                },
+                (error) => {
+                    console.error("Error fetching category: ", error);
                 }
-            } catch (error) {
-                console.log("fetch activity data error: ", error);
-            }
+            )
 
-            setLoading(false);
-        };
-
-        getCategory();
-        getActivityData();
+        // หยุดการติดตามข้อมูลใน firestore
+        return () => getCategory();
     }, []);
 
     useEffect(() => {

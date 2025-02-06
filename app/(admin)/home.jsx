@@ -59,19 +59,6 @@ export default function AdminHome() {
                     onPress={() => console.log(`Pressed: จัดการรีวิวและคะแนน`)}
                 >
                     <MaterialIcons
-                        name="reviews"
-                        size={24}
-                        color="#FFF600"
-                        style={styles.buttonIcon}
-                    />
-                    <Text style={styles.buttonText}>จัดการรีวิวและคะแนน</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={styles.button}
-                    onPress={() => console.log(`Pressed: จัดการรีวิวและคะแนน`)}
-                >
-                    <MaterialIcons
                         name="report-gmailerrorred"
                         size={24}
                         color="#FF9D00"

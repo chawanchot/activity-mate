@@ -1,4 +1,13 @@
-import { View, Text, FlatList, StyleSheet, TextInput, TouchableOpacity, RefreshControl } from "react-native";
+import { 
+    View, 
+    Text, 
+    FlatList, 
+    StyleSheet, 
+    TextInput, 
+    TouchableOpacity, 
+    RefreshControl, 
+    ActivityIndicator 
+} from "react-native";
 import React, { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons, FontAwesome5, AntDesign } from "@expo/vector-icons";
@@ -10,35 +19,18 @@ export default function MemberSeachActivity() {
 
     const [open, setOpen] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     const [categories, setCategories] = useState([]);
     const [activityList, setActivityList] = useState([]);
     const [selectedCategory, setSelectedCategory] = useState("");
 
-    const getCategory = async () => {
-        const fetchCategory = await firestore()
-            .collection("category")
-            .where("status", "==", true)
-            .get()
-
-        const dataCategory = [];
-
-        for (const doc of fetchCategory.docs) {
-            const data = doc.data();
-
-            dataCategory.push({
-                id: doc.id,
-                ...data
-            });
-        }
-
-        setCategories(dataCategory);
-    }
-
     const getActivity = async () => {
+        setIsLoading(true);
         try {
             const fetchActivity = await firestore()
             .collection("activities")
+            .where("status", "==", "ongoing")
             .orderBy("startDate", "asc")
             .get()
 
@@ -88,26 +80,47 @@ export default function MemberSeachActivity() {
         } catch (error) {
             console.log("fetch activity list error: ", error)
         }
+        setIsLoading(false);
     }
 
     const onRefresh = () => {
         setRefreshing(true);
 
-        getCategory();
         getActivity();
 
         setRefreshing(false);
     };
 
     useEffect(() => {
-        getCategory();
         getActivity();
-    }, [])
+        
+        const getCategory = firestore()
+            .collection("category")
+            .where("status", "!=", false)
+            .onSnapshot(
+                (snapshot) => {
+                    const dataCategory = snapshot.docs.map((doc) => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                    
+                    setCategories(dataCategory);
+                },
+                (error) => {
+                    console.error("Error fetching category: ", error);
+                }
+            )
+
+        // หยุดการติดตามข้อมูลใน firestore
+        return () => getCategory();
+    }, []);
 
     return (
         <SafeAreaView style={{ flex: 1 }}>
             <View style={styles.container}>
-                <View style={{ paddingHorizontal: 8, paddingTop: 2 }}>
+                <View style={{ paddingHorizontal: 10 }}>
+                    {/* ชื่อกิจกรรม */}
+                    <Text style={styles.label}>ชื่อกิจกรรม</Text>
                     <View style={styles.inputContainer}>
                         <MaterialIcons name="search" size={24} color="#A6A6A6" />
                         <TextInput style={styles.input} />
@@ -116,108 +129,124 @@ export default function MemberSeachActivity() {
                     {/* สถานที่และหมวดหมู่ */}
                     <View style={{ flexDirection: "row", gap: 10 }}>
                         {/* สถานที่ */}
-                        <TouchableOpacity
-                            activeOpacity={0.8}
-                            style={[styles.inputContainer, { flex: 1 }]}
-                        >
-                            <MaterialIcons name="location-on" size={24} color="#A6A6A6" />
-                        </TouchableOpacity>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.label}>สถานที่</Text>
+                            <TouchableOpacity
+                                activeOpacity={0.8}
+                                style={[styles.inputContainer, { flex: 1 }]}
+                            >
+                                <MaterialIcons name="location-on" size={24} color="#A6A6A6" />
+                            </TouchableOpacity>
+                        </View>
 
                         {/* หมวดหมู่ */}
-                        <View style={[styles.inputContainer, { flex: 1 }]}>
-                            <FontAwesome5 name="layer-group" size={16} color="#A6A6A6" />
-                            <DropDownPicker
-                                open={open}
-                                value={selectedCategory}
-                                items={categories
-                                    .filter((category) => category.status === true)
-                                    .map((category) => ({
-                                        label: category.name,
-                                        value: category.id,
-                                    }))}
-                                setOpen={setOpen}
-                                setValue={setSelectedCategory}
-                                placeholder=""
-                                style={{
-                                    backgroundColor: "#FFF5F5",
-                                    borderWidth: 0,
-                                    flex: 1,
-                                }}
-                                dropDownContainerStyle={{
-                                    backgroundColor: "#FFF5F5",
-                                }}
-                                labelStyle={{
-                                    fontFamily: "Kanit_400Regular",
-                                    fontSize: 18,
-                                    color: "black",
-                                }}
-                            />
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.label}>หมวดหมู่</Text>
+                            <View style={styles.inputContainer}>
+                                <FontAwesome5 name="layer-group" size={16} color="#A6A6A6" />
+                                <DropDownPicker
+                                    open={open}
+                                    value={selectedCategory}
+                                    items={categories
+                                        .filter((category) => category.status === true)
+                                        .map((category) => ({
+                                            label: category.name,
+                                            value: category.id,
+                                        }))}
+                                    setOpen={setOpen}
+                                    setValue={setSelectedCategory}
+                                    placeholder=""
+                                    style={{
+                                        backgroundColor: "#FFF5F5",
+                                        borderWidth: 0,
+                                        flex: 1,
+                                    }}
+                                    dropDownContainerStyle={{
+                                        backgroundColor: "#FFF5F5",
+                                    }}
+                                    labelStyle={{
+                                        fontFamily: "Kanit_400Regular",
+                                        fontSize: 18,
+                                        color: "black",
+                                    }}
+                                />
+                            </View>
                         </View>
                     </View>
+                    <TouchableOpacity style={styles.button}>
+                        <Text style={styles.buttonText}>ค้นหา</Text>
+                    </TouchableOpacity>
                 </View>
-                <FlatList
-                    data={activityList}
-                    renderItem={({item}) => (
-                        <TouchableOpacity 
-                            activeOpacity={0.8} 
-                            onPress={() => router.push({
-                                pathname: "activityDetail",
-                                params: {
-                                    id: item.id
-                                }
-                            })}
-                        >
-                            <View style={styles.listContainer}>
-                                {/* Header: จำนวนผู้เข้าร่วม */}
-                                <View style={{flexDirection: "row", alignItems: "center", justifyContent: "space-between"}}>
-                                    <View style={{flexDirection: "row", alignItems: "center"}}>
-                                        <AntDesign name="user" color="black" size={14} />
+                {isLoading ? (
+                    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                        <ActivityIndicator size="large" color="#0000ff" />
+                        <Text style={{ fontFamily: "Kanit_600SemiBold", marginTop: 10 }}>กำลังโหลดข้อมูล...</Text>
+                    </View>
+                ) : (
+                    <FlatList
+                        data={activityList}
+                        renderItem={({item}) => (
+                            <TouchableOpacity 
+                                activeOpacity={0.8} 
+                                onPress={() => router.push({
+                                    pathname: "activityDetail",
+                                    params: {
+                                        id: item.id
+                                    }
+                                })}
+                            >
+                                <View style={styles.listContainer}>
+                                    {/* Header: จำนวนผู้เข้าร่วม */}
+                                    <View style={{flexDirection: "row", alignItems: "center", justifyContent: "space-between"}}>
+                                        <View style={{flexDirection: "row", alignItems: "center"}}>
+                                            <AntDesign name="user" color="black" size={14} />
+                                            <Text style={styles.activityHead}>
+                                                0/{item.max}
+                                            </Text>
+                                        </View>
                                         <Text style={styles.activityHead}>
-                                            1/{item.max}
+                                            {item.startDate}
                                         </Text>
                                     </View>
-                                    <Text style={styles.activityHead}>
-                                        {item.startDate}
-                                    </Text>
-                                </View>
 
-                                {/* ชื่อกิจกรรม */}
-                                <Text style={styles.activityName}>
-                                    {item.name}
-                                </Text>
-
-                                {/* คำอธิบายกิจกรรม */}
-                                <Text style={styles.activityDetail} numberOfLines={2}>
-                                    {item.description}
-                                </Text>
-
-                                <View style={styles.activityFooter}>
-                                    {/* หมวดหมู่ */}
-                                    <Text style={styles.activityCategory}>
-                                        {item.category}
+                                    {/* ชื่อกิจกรรม */}
+                                    <Text style={styles.activityName}>
+                                        {item.name}
                                     </Text>
 
-                                    {/* สถานที่ */}
-                                    <View style={{flexDirection: "row", alignItems: "center"}}>
-                                        <MaterialIcons name="location-on" color="black" size={18} />
-                                        <Text style={styles.activityPlace}>
-                                            {item.locationName}
+                                    {/* คำอธิบายกิจกรรม */}
+                                    <Text style={styles.activityDetail} numberOfLines={2}>
+                                        {item.description}
+                                    </Text>
+
+                                    <View style={styles.activityFooter}>
+                                        {/* หมวดหมู่ */}
+                                        <Text style={styles.activityCategory}>
+                                            {item.category}
                                         </Text>
+
+                                        {/* สถานที่ */}
+                                        <View style={{flexDirection: "row", alignItems: "center"}}>
+                                            <MaterialIcons name="location-on" color="black" size={18} />
+                                            <Text style={styles.activityPlace}>
+                                                {item.locationName}
+                                            </Text>
+                                        </View>
                                     </View>
                                 </View>
-                            </View>
-                        </TouchableOpacity>
-                    )}
-                    keyExtractor={(item) => item.id}
-                    contentContainerStyle={{ padding: 8}}
-                    showsVerticalScrollIndicator={false}
-                    refreshControl={
-                        <RefreshControl
-                            refreshing={refreshing}
-                            onRefresh={onRefresh}
-                        />
-                    }
-                />
+                            </TouchableOpacity>
+                        )}
+                        keyExtractor={(item) => item.id}
+                        contentContainerStyle={{ padding: 8}}
+                        showsVerticalScrollIndicator={false}
+                        refreshControl={
+                            <RefreshControl
+                                refreshing={refreshing}
+                                onRefresh={onRefresh}
+                            />
+                        }
+                    />
+                )}
             </View>
         </SafeAreaView>
     );
@@ -227,7 +256,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "white",
-        paddingVertical: 10,
+        paddingHorizontal: 5,
     },
     label: {
         fontFamily: "Kanit_400Regular"
@@ -236,9 +265,9 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         backgroundColor: "#FFF5F5",
-        marginBottom: 10,
+        marginBottom: 5,
         borderRadius: 10,
-        height: 55,
+        height: 50,
         paddingHorizontal: 10,
         width: "100%",
     },
@@ -306,5 +335,18 @@ const styles = StyleSheet.create({
         color: "#57595c",
         fontSize: 14,
         fontFamily: "Kanit_400Regular"
+    },
+    button: {
+        marginVertical: 10,
+        backgroundColor: "#3B82F6",
+        height: 40,
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: 10,
+    },
+    buttonText: {
+        fontFamily: "Kanit_600SemiBold",
+        fontSize: 18,
+        color: "white"
     }
 });

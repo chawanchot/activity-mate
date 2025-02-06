@@ -7,7 +7,7 @@ import {
     TouchableOpacity,
     Alert,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import DropDownPicker from "react-native-dropdown-picker";
 import proviceData from "../constants/proviceData.json";
@@ -15,13 +15,23 @@ import { MaterialIcons } from "@expo/vector-icons";
 import firestore from "@react-native-firebase/firestore";
 import { useAuth } from "../contexts/AuthContext";
 import { router } from "expo-router";
+import auth from "@react-native-firebase/auth";
 
 export default function Verify() {
-    const { user, setUser } = useAuth();
+    const { user, setUser, loggedIn } = useAuth();
 
     const [open, setOpen] = useState(false);
     const [idCardNumber, setIdCardNumber] = useState("");
     const [provice, setProvice] = useState("");
+
+    // ออกจากระบบ
+    const logout = () => {
+        auth()
+            .signOut()
+            .catch((error) =>
+                console.log("Error signing out: ", error)
+            )
+    };
 
     const checkIdNumberValid = async () => {
         // ตรวจสอบว่าเลขบัตรมีความยาว 13 หลักและเป็นตัวเลขทั้งหมด
@@ -69,7 +79,6 @@ export default function Verify() {
                             setUser((prevData) => ({
                                 ...prevData,
                                 idCardNumber: idCardNumber,
-                                verify: true,
                             }));
 
                             router.replace("/");
@@ -91,6 +100,13 @@ export default function Verify() {
         }
     };
 
+    // ออกจากระบบให้กลับไปหน้า login
+    useEffect(() => {
+        if (!loggedIn) {
+            router.replace("/login");
+        }
+    }, [loggedIn]);
+
     return (
         <SafeAreaView style={styles.container}>
             {/* เลขบัตรประชาชน */}
@@ -102,6 +118,7 @@ export default function Verify() {
                     value={idCardNumber}
                     onChangeText={setIdCardNumber}
                     keyboardType="number-pad"
+                    maxLength={13}
                 />
             </View>
 
@@ -141,6 +158,9 @@ export default function Verify() {
                 style={styles.button}
             >
                 <Text style={styles.buttonText}>ยืนยัน</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={logout}>
+                <Text style={styles.logoutBtn}>ออกจากระบบ</Text>
             </TouchableOpacity>
         </SafeAreaView>
     );
@@ -183,5 +203,11 @@ const styles = StyleSheet.create({
         fontFamily: "Kanit_600SemiBold",
         fontSize: 18,
         color: "white"
+    },
+    logoutBtn: {
+        fontFamily: "Kanit_600SemiBold",
+        color: "red",
+        marginHorizontal: "auto",
+        marginTop: 10
     }
 })

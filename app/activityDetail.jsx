@@ -39,26 +39,26 @@ export default function ActivityDetail() {
                     firestore()
                         .collection("activities")
                         .doc(params.id)
-                        .delete()
+                        .update({ status: "cancel" })
                         .then(() => {
                             router.replace("/(tabs)/home");
                         })
                         .catch((error) => {
-                            console.error("Error delete:", error);
+                            console.error("Error update cancel status:", error);
+                            Alert.alert("เกิดข้อผิดพลาด", "ไม่สามารถยกเลิกกิจกรรมได้ กรุณาลองใหม่อีกครั้ง");
                         }),
             },
         ]);
     };
 
     useEffect(() => {
-        const getActivityData = async () => {
-            try {
-                const fetchActivity = await firestore()
-                    .collection("activities")
-                    .doc(params.id)
-                    .get();
+        const getActivityData = firestore()
+            .collection("activities")
+            .doc(params.id)
+            .onSnapshot(async (snapshot) => {
+                if (!snapshot.exists) return; // ถ้าไม่มีข้อมูลให้หยุดการทำงาน
 
-                const activityData = fetchActivity.data();
+                const activityData = snapshot.data();
 
                 const fetchOwner = await firestore()
                     .collection("users")
@@ -71,13 +71,14 @@ export default function ActivityDetail() {
                     ...activityData,
                     owner: ownerData,
                 });
-            } catch (error) {
-                console.log(error);
-            }
-        };
+            })
 
-        getActivityData();
+        return () => getActivityData();
     }, []);
+
+    if (!user) {
+        return null; // หยุดการเรนเดอร์เมื่อ user เป็น null
+    }
 
     if (!activity) {
         // แสดง Loading เมื่อ activity ยังไม่มีข้อมูล
@@ -107,11 +108,11 @@ export default function ActivityDetail() {
                         </Text>
                         <View style={styles.participantContainer}>
                             <AntDesign name="user" color="black" size={14} />
-                            <Text style={styles.participantText}>1/{activity.max}</Text>
+                            <Text style={styles.participantText}>0/{activity.max}</Text>
                         </View>
                     </View>
 
-                    {/* Location */}
+                    {/* สถานที่ */}
                     <View style={styles.locationContainer}>
                         <MaterialIcons name="location-on" size={24} color="black" />
                         <View style={{ marginLeft: 8 }}>
@@ -132,10 +133,10 @@ export default function ActivityDetail() {
                         </View>
                     </View>
 
-                    {/* Description */}
+                    {/* รายละเอียด */}
                     <Text style={styles.descriptionText}>{activity.description}</Text>
 
-                    {/* Participant */}
+                    {/* ผู้จัดกิจกรรม */}
                     <View style={styles.ownerContainer}>
                         <Image
                             source={{ uri: activity.owner.profilePicture }}
@@ -151,45 +152,50 @@ export default function ActivityDetail() {
                     </View>
                 </View>
 
-                {/* Buttons */}
-                <View style={{ marginBottom: 10 }}>
-                    <View style={styles.chatButtonContainer}>
-                        <TouchableOpacity activeOpacity={0.8} style={styles.chatButton}>
-                            <MaterialIcons name="chat-bubble-outline" color="white" size={24} />
-                            <Text style={styles.chatButtonText}>สนทนา</Text>
-                        </TouchableOpacity>
-                    </View>
-                    {activity.owner.uid === user.uid && (
-                        <View>
-                            <TouchableOpacity activeOpacity={0.8} style={styles.endActivityButton}>
-                                <Text style={styles.buttonText}>สิ้นสุดกิจกรรม</Text>
-                            </TouchableOpacity>
-                            <View style={styles.editCancelButtonContainer}>
-                                <TouchableOpacity
-                                    activeOpacity={0.8}
-                                    onPress={() =>
-                                        router.push({
-                                            pathname: "editActivity",
-                                            params: {
-                                                id: params.id,
-                                            },
-                                        })
-                                    }
-                                    style={styles.editButton}
-                                >
-                                    <Text style={styles.buttonText}>แก้ไข</Text>
+                {/* ปุ่ม */}
+                {activity.status === "ongoing" ? (
+                    <View style={{ marginBottom: 10 }}>
+                        {activity.createdByUserID === user.uid && (
+                            <View>
+                                <View style={styles.chatButtonContainer}>
+                                    <TouchableOpacity activeOpacity={0.8} style={styles.chatButton}>
+                                        <MaterialIcons name="chat-bubble-outline" color="white" size={24} />
+                                        <Text style={styles.chatButtonText}>สนทนา</Text>
+                                    </TouchableOpacity>
+                                </View>
+                                <TouchableOpacity activeOpacity={0.8} style={styles.endActivityButton}>
+                                    <Text style={styles.buttonText}>สิ้นสุดกิจกรรม</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity
-                                    activeOpacity={0.8}
-                                    onPress={cancelActivity}
-                                    style={styles.cancelButton}
-                                >
-                                    <Text style={styles.buttonText}>ยกเลิกกิจกรรม</Text>
-                                </TouchableOpacity>
+                                <View style={styles.editCancelButtonContainer}>
+                                    <TouchableOpacity
+                                        activeOpacity={0.8}
+                                        onPress={() =>
+                                            router.push({
+                                                pathname: "editActivity",
+                                                params: {
+                                                    id: params.id,
+                                                },
+                                            })
+                                        }
+                                        style={styles.editButton}
+                                    >
+                                        <Text style={styles.buttonText}>แก้ไข</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        activeOpacity={0.8}
+                                        onPress={cancelActivity}
+                                        style={styles.cancelButton}
+                                    >
+                                        <Text style={styles.buttonText}>ยกเลิกกิจกรรม</Text>
+                                    </TouchableOpacity>
+                                </View>
                             </View>
-                        </View>
-                    )}
-                </View>
+                        )}
+                    </View>
+                ) : (
+                    // ข้อความยกเลิกกิจกรรม
+                    <Text style={styles.cancelText}>กิจกรรมถูกยกเลิก</Text>
+                )}
             </View>
         </SafeAreaView>
     );
@@ -317,5 +323,12 @@ const styles = StyleSheet.create({
     buttonMap: {
         color: "blue",
         fontFamily: "Kanit_400Regular"
+    },
+    cancelText: {
+        color: "#EF4444",
+        fontFamily: "Kanit_600SemiBold",
+        fontSize: 24,
+        marginHorizontal: "auto",
+        paddingBottom: 15
     }
 });

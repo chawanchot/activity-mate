@@ -21,7 +21,7 @@ extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
   }
 }
 
-rootProject.name = 'activity-mate-expo'
+rootProject.name = 'ActivityMate'
 
 dependencyResolutionManagement {
   versionCatalogs {

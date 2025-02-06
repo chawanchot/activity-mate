@@ -92,30 +92,25 @@ export default function MemberCreateActivity() {
     }
 
     useEffect(() => {
-        const getCategory = async () => {
-            try {
-                const fetchCategory = await firestore()
-                    .collection("category")
-                    .get();
-        
-                const dataCategory = [];
-
-                for (const doc of fetchCategory.docs) {
-                    const data = doc.data();
-
-                    dataCategory.push({
+        const getCategory = firestore()
+            .collection("category")
+            .where("status", "!=", false)
+            .onSnapshot(
+                (snapshot) => {
+                    const dataCategory = snapshot.docs.map((doc) => ({
                         id: doc.id,
-                        ...data
-                    });
+                        ...doc.data()
+                    }));
+                    
+                    setCategories(dataCategory);
+                },
+                (error) => {
+                    console.error("Error fetching category: ", error);
                 }
-        
-                setCategories(dataCategory);
-            } catch (error) {
-                console.log("fetch Data error: ", error);
-            }
-        }
+            )
 
-        getCategory();
+        // หยุดการติดตามข้อมูลใน firestore
+        return () => getCategory();
     }, []);
 
     useEffect(() => {

@@ -86,6 +86,7 @@ export default function MemberHome() {
                     category: category.name,
                     description: data.description,
                     max: data.max,
+                    status: data.status,
                     locationName: data.locationName,
                     subdistric: data.subdistric,
                     distric: data.distric,
@@ -196,12 +197,19 @@ export default function MemberHome() {
                                 })}
                             >
                                 <View style={styles.listContainer}>
+                                    {/* ข้อความกิจกรรมถูกยกเลิก */}
+                                    {item.status === "cancel" && (
+                                        <View style={styles.overlay}>
+                                            <Text style={styles.cancelText}>กิจกรรมถูกยกเลิก</Text>
+                                        </View>
+                                    )}
+
                                     {/* Header: จำนวนผู้เข้าร่วม */}
                                     <View style={{flexDirection: "row", alignItems: "center", justifyContent: "space-between"}}>
                                         <View style={{flexDirection: "row", alignItems: "center"}}>
                                             <AntDesign name="user" color="black" size={14} />
                                             <Text style={styles.activityHead}>
-                                                1/{item.max}
+                                                0/{item.max}
                                             </Text>
                                         </View>
                                         <Text style={styles.activityHead}>
@@ -317,7 +325,9 @@ const styles = StyleSheet.create({
         elevation: 5,
         marginBottom: 5,
         padding: 8,
-        height: 150
+        height: 150,
+        position: "relative", // ทำให้ซ้อนทับได้
+        overflow: "hidden",
     },
     activityHead: {
         color: "#6b7280",
@@ -355,5 +365,18 @@ const styles = StyleSheet.create({
         color: "#57595c",
         fontSize: 14,
         fontFamily: "Kanit_400Regular"
-    }
+    },
+    overlay: {
+        ...StyleSheet.absoluteFillObject, // ทำให้ครอบคลุมพื้นที่ทั้งหมด
+        backgroundColor: "rgba(60, 60, 60, 0.8)",
+        justifyContent: "center",
+        alignItems: "center",
+        zIndex: 10,
+    },
+    cancelText: {
+        color: "white",
+        fontSize: 24,
+        fontFamily: "Kanit_600SemiBold",
+    },
+
 })

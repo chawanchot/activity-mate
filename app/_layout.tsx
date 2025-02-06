@@ -30,18 +30,7 @@ export default function RootLayout() {
                     name="verify"
                     options={{
                         headerShown: true,
-                        headerTitle: "ยืนยันตัวตน",
-                        headerTitleAlign: "center",
-                        headerTitleStyle: {
-                            fontFamily: "Kanit_600SemiBold",
-                        },
-                    }}
-                />
-                <Stack.Screen
-                    name="verifyOtp"
-                    options={{
-                        headerShown: true,
-                        headerTitle: "ยืนยันตัวตน",
+                        headerTitle: "สมัครสมาชิก",
                         headerTitleAlign: "center",
                         headerTitleStyle: {
                             fontFamily: "Kanit_600SemiBold",
