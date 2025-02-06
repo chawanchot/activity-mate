@@ -22,74 +22,76 @@ export default function Login() {
 
     useEffect(() => {
         if (loggedIn) {
-            router.replace("/");
+            router.replace("/"); // ถ้าล็อกอินอยู่แล้ว ให้เปลี่ยนไปหน้าแรก
         }
     }, [loggedIn])
 
+    // ตั้งค่าการใช้งาน Google Sign-In
     GoogleSignin.configure({
         webClientId:
             "16933892808-v9mu7f8p127s94tnbnrfio4ev1mi34bt.apps.googleusercontent.com",
     });
 
+    // ฟังก์ชันเข้าสู่ระบบด้วย Google
     const signInGoogle = async () => {
         try {
-            // Check if your device supports Google Play
+            // ตรวจสอบว่ามี Google Play Services อยู่ในอุปกรณ์
             await GoogleSignin.hasPlayServices({
                 showPlayServicesUpdateDialog: true,
             });
-            // Get the users ID token
+
+            // ขอรับข้อมูลบัญชี Google ของผู้ใช้
             const response = await GoogleSignin.signIn();
 
-            // Create a Google credential with the token
+            // สร้าง Credential ของ Google เพื่อใช้ใน Firebase
             const googleCredential = auth.GoogleAuthProvider.credential(
                 response?.data.idToken
             );
 
-            // Sign-in the user with the credential
+            // เข้าสู่ระบบ Firebase ด้วย Credential ของ Google
             return auth().signInWithCredential(googleCredential);
         } catch (error) {
-            console.log("error: ", error);
             if (isErrorWithCode(error)) {
                 switch (error.code) {
                     case statusCodes.IN_PROGRESS:
-                        // operation (eg. sign in) already in progress
+                        // กำลังดำเนินการเข้าสู่ระบบ
                         break;
                     case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
-                        // Android only, play services not available or outdated
+                        // Google Play Services ไม่มี
                         break;
                     default:
-                    // some other error happened
+                        console.log(error);
                 }
-            } else {
-                // an error that's not related to google sign in occurred
             }
         }
     };
 
+    // ฟังก์ชันเข้าสู่ระบบด้วย Facebook
     const signInFacebook = async () => {
-        // Attempt login with permissions
+
+        // ขอสิทธิ์เข้าสู่ระบบผ่าน Facebook
         const result = await LoginManager.logInWithPermissions([
             "public_profile",
             "email",
         ]);
 
         if (result.isCancelled) {
-            throw "User cancelled the login process";
+            console.log("ผู้ใช้ยกเลิกกระบวนการเข้าสู่ระบบ");
         }
 
-        // Once signed in, get the users AccessToken
+         // ขอรับ Access Token ของผู้ใช้ที่เข้าสู่ระบบ Facebook
         const data = await AccessToken.getCurrentAccessToken();
 
         if (!data) {
-            throw "Something went wrong obtaining access token";
+            console.log("เกิดข้อผิดพลาดในการขอรับ Access Token");
         }
 
-        // Create a Firebase credential with the AccessToken
+        // สร้าง Credential ของ Facebook เพื่อใช้ใน Firebase
         const facebookCredential = auth.FacebookAuthProvider.credential(
             data.accessToken
         );
 
-        // Sign-in the user with the credential
+        // เข้าสู่ระบบ Firebase ด้วย Credential ของ Facebook
         return auth().signInWithCredential(facebookCredential);
     };
 

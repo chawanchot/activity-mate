@@ -24,6 +24,7 @@ export default function Category() {
     const [editInput, setEditInput] = useState("");
     const [editId, setEditId] = useState(null);
 
+    // ฟังก์ชันดึงข้อมูลหมวดหมู่จาก Firestore
     const getCategoryData = (querySnapShot) => {
         const Arr = [];
         querySnapShot.forEach((res) => {
@@ -38,6 +39,7 @@ export default function Category() {
         setCategory(Arr);
     };
 
+    // ฟังก์ชันเพิ่มหมวดหมู่ใหม่
     const addCategory = () => {
         if (addInput !== "") {
             db.add({
@@ -50,12 +52,14 @@ export default function Category() {
         }
     };
 
+    // ฟังก์ชันเปิด modal แก้ไขหมวดหมู่
     const openEditModal = (id, name) => {
         setEditInput(name);
         setEditId(id);
         setShowEditModal(true);
     };
 
+    // ฟังก์ชันบันทึกการแก้ไขหมวดหมู่
     const submitEdit = () => {
         db.doc(editId).update({
             name: editInput,
@@ -64,6 +68,7 @@ export default function Category() {
         setShowEditModal(false);
     };
 
+    // ฟังก์ชันเปิดใช้งานหมวดหมู่ที่ถูกปิดใช้งาน
     const enableCategory = (id, name) => {
         Alert.alert("เปิดใช้งานหมวดหมู่กิจกรรม", "ยืนยันเปิดใช้งานหมวดหมู่" + name, [
             {
@@ -79,6 +84,7 @@ export default function Category() {
         ]);
     }
 
+    // ฟังก์ชันยกเลิกใช้งานหมวดหมู่
     const cancelCategory = (id, name) => {
         Alert.alert("", "ยืนยันยกเลิกใช้งานหมวดหมู่" + name, [
             {
@@ -94,12 +100,14 @@ export default function Category() {
         ]);
     };
 
+    // ดึงข้อมูลหมวดหมู่จาก Firestore ทุกครั้งที่มีการเปลี่ยนแปลง
     useEffect(() => {
         db.onSnapshot(getCategoryData);
     }, []);
 
     return (
         <SafeAreaView style={styles.container}>
+             {/* ปุ่มเพิ่มหมวดหมู่กิจกรรม */}
             <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={() => setShowAddModal(true)}
@@ -110,6 +118,7 @@ export default function Category() {
                 </Text>
             </TouchableOpacity>
 
+            {/* แสดงรายการหมวดหมู่ทั้งหมด */}
             <FlatList
                 data={category}
                 keyExtractor={(item) => item.id}
@@ -123,6 +132,8 @@ export default function Category() {
                                 </Text>
                             </View>
                             <View style={styles.buttonContainer}>
+                                
+                                {/* ปุ่มแก้ไข */}
                                 <TouchableOpacity
                                     activeOpacity={0.8}
                                     onPress={() =>
@@ -132,6 +143,8 @@ export default function Category() {
                                 >
                                     <Text style={[styles.manageBtnText, { color: "black" }]}>แก้ไข</Text>
                                 </TouchableOpacity>
+
+                                {/* ปุ่มเปิด/ปิดใช้งาน */}
                                 {item.status ? (
                                     <TouchableOpacity
                                         activeOpacity={0.8}

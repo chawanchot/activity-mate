@@ -8,14 +8,16 @@ import { router, useLocalSearchParams } from "expo-router";
 export default function SearchLocation() {
     const params = useLocalSearchParams();
 
+    // ฟังก์ชันสำหรับเลือกสถานที่
     const placeSelect = (data, details) => {
-        const address = details.address_components;
-        const location = details.geometry.location;
+        const address = details.address_components; // ดึงข้อมูลที่อยู่จากรายละเอียดสถานที่
+        const location = details.geometry.location; // ดึงพิกัดสถานที่
 
         let subdistrict = "";
         let district = "";
         let provice = "";
 
+         // แยกประเภทข้อมูลที่อยู่
         address.forEach((item) => {
             if (
                 item.types.includes("locality") ||
@@ -64,7 +66,7 @@ export default function SearchLocation() {
                         language: "th",
                         components: "country:th",
                     }}
-                    fetchDetails={true}
+                    fetchDetails={true} // ดึงรายละเอียดของสถานท
                     styles={{
                         textInputContainer: {
                             backgroundColor: "#FFF5F5",
