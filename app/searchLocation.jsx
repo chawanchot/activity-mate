@@ -66,7 +66,7 @@ export default function SearchLocation() {
                         language: "th",
                         components: "country:th",
                     }}
-                    fetchDetails={true} // ดึงรายละเอียดของสถานท
+                    fetchDetails={true} // ดึงรายละเอียดของสถานที่
                     styles={{
                         textInputContainer: {
                             backgroundColor: "#FFF5F5",

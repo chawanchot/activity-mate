@@ -5,63 +5,71 @@ import firestore from "@react-native-firebase/firestore";
 // สร้าง Context
 const AuthContext = createContext();
 
-// สร้าง Provider
+// สร้าง Provider สำหรับจัดการข้อมูล
 export const AuthProvider = ({ children }) => {
-    const db = firestore();
+    const db = firestore(); // เรียกใช้งาน Firestore
 
-    const [user, setUser] = useState(null); // State สำหรับเก็บข้อมูลผู้ใช้
-    const [loggedIn, setLoggedIn] = useState(false);
-    const [isLoading, setIsLoading] = useState(true); // State สำหรับตรวจสอบการโหลด
+    // เก็บข้อมูลผู้ใช้
+    const [user, setUser] = useState(null); 
+    const [loggedIn, setLoggedIn] = useState(false); // สถานะล็อกอิน
+    const [isLoading, setIsLoading] = useState(true); // กำลังโหลดข้อมูล
 
     // ฟังก์ชันสำหรับตรวจสอบสถานะการเข้าสู่ระบบ
     useEffect(() => {
+        // ติดตามสถานะการเข้าสู่ระบบของ Firebase Authentication
         const subscriber = auth().onAuthStateChanged(async (data) => {
             setIsLoading(true); // เริ่มต้นโหลดข้อมูล
-            if (data) {
+
+            if (data) { // ถ้ามีข้อมูลผู้ใช้
                 try {
-                    // ดึงข้อมูลผู้ใช้จาก Firestore
+                    // ดึงข้อมูลผู้ใช้จาก Firestore โดยใช้ UID เป็น document ID
                     const userDoc = await db.collection("users").doc(data.uid).get();
 
-                    if (userDoc.exists) {
-                        setUser({uid: data.uid, ...userDoc.data()}); // อัปเดต State `user` ด้วยข้อมูลจาก Firestore
+                    if (userDoc.exists) { 
+                        // ถ้ามีข้อมูลอยู่ใน Firestore ให้อัปเดต state user
+                        setUser({ uid: data.uid, ...userDoc.data() }); 
                     } else {
-                        // ถ้าไม่มีข้อมูลใน Firestore ให้สร้างใหม่
+                        // ถ้ายังไม่มีข้อมูลผู้ใช้ใน Firestore ให้สร้างใหม่
                         const newUser = {
-                            username: data.displayName || "Unknown User",
-                            email: data.email,
-                            profilePicture: data.photoURL || "",
-                            role: "member",
-                            status: true,
-                            idCardNumber: "",
+                            username: data.displayName || "Unknown User", // ใช้ displayName ถ้ามี
+                            email: data.email, // อีเมลของผู้ใช้
+                            profilePicture: data.photoURL || "", // รูปโปรไฟล์ (ถ้ามี)
+                            role: "member", // กำหนดบทบาทเป็น member
+                            status: true, // กำหนดสถานะเป็นเปิดใช้งาน
+                            idCardNumber: "", // กำหนดค่าเริ่มต้นให้ idCardNumber เป็นค่าว่าง
                         };
-                        // เพิ่มข้อมูลในฐานข้อมูล
+
+                        // บันทึกข้อมูลผู้ใช้ใหม่ลง Firestore
                         await db.collection("users").doc(data.uid).set(newUser);
-                        // อัปเดต State ด้วยข้อมูลที่สร้าง
-                        setUser({uid: data.uid, ...newUser}); 
+
+                        // อัปเดต state user ด้วยข้อมูลที่เพิ่งสร้าง
+                        setUser({ uid: data.uid, ...newUser }); 
                     }
 
-                    setLoggedIn(true);
+                    setLoggedIn(true); // กำหนดว่าเข้าสู่ระบบเรียบร้อย
                 } catch (error) {
-                    console.error("Error fetching user data:", error);
+                    console.error("Error fetching user data:", error); // แสดง error ถ้าดึงข้อมูลไม่ได้
                 }
-            } else {
+            } else { 
+                // ถ้าผู้ใช้ออกจากระบบ
                 setLoggedIn(false);
-                setUser(null); // เคลียร์ข้อมูลผู้ใช้เมื่อออกจากระบบ
+                setUser(null); // ล้างข้อมูลผู้ใช้
             }
+
             setIsLoading(false); // เสร็จสิ้นการโหลด
         });
 
-        return subscriber; // ยกเลิกการติดตามเมื่อ component ถูกทำลาย
+        return subscriber; // คืนค่าฟังก์ชันเพื่อยกเลิกการติดตามเมื่อ component ถูกทำลาย
     }, []);
 
     return (
         <AuthContext.Provider value={{ user, setUser, isLoading, loggedIn }}>
-            {children}
+            {children} 
         </AuthContext.Provider>
     );
 };
 
-// Hook สำหรับใช้งาน Context
+// Hook สำหรับเรียกใช้ Context
 export const useAuth = () => {
     return useContext(AuthContext);
 };
