@@ -7,7 +7,6 @@ const AuthContext = createContext();
 
 // สร้าง Provider สำหรับจัดการข้อมูล
 export const AuthProvider = ({ children }) => {
-    const db = firestore(); // เรียกใช้งาน Firestore
 
     // เก็บข้อมูลผู้ใช้
     const [user, setUser] = useState(null); 
@@ -23,7 +22,7 @@ export const AuthProvider = ({ children }) => {
             if (data) { // ถ้ามีข้อมูลผู้ใช้
                 try {
                     // ดึงข้อมูลผู้ใช้จาก Firestore โดยใช้ UID เป็น document ID
-                    const userDoc = await db.collection("users").doc(data.uid).get();
+                    const userDoc = await firestore().collection("users").doc(data.uid).get();
 
                     if (userDoc.exists) { 
                         // ถ้ามีข้อมูลอยู่ใน Firestore ให้อัปเดต state user
@@ -36,11 +35,10 @@ export const AuthProvider = ({ children }) => {
                             profilePicture: data.photoURL || "", // รูปโปรไฟล์ (ถ้ามี)
                             role: "member", // กำหนดบทบาทเป็น member
                             status: true, // กำหนดสถานะเป็นเปิดใช้งาน
-                            idCardNumber: "", // กำหนดค่าเริ่มต้นให้ idCardNumber เป็นค่าว่าง
                         };
 
                         // บันทึกข้อมูลผู้ใช้ใหม่ลง Firestore
-                        await db.collection("users").doc(data.uid).set(newUser);
+                        await firestore().collection("users").doc(data.uid).set(newUser);
 
                         // อัปเดต state user ด้วยข้อมูลที่เพิ่งสร้าง
                         setUser({ uid: data.uid, ...newUser }); 

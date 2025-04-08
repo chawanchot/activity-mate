@@ -80,6 +80,14 @@ export default function MemberHome() {
                     year: "numeric",
                 });
 
+                // จำนวนคนเข้าร่วมทั้งหมด
+                const allRegistrations = await firestore()
+                    .collection("registrations")
+                    .where("activityID", "==", doc.id)
+                    .get();
+
+                const allRegistrationsData = allRegistrations.docs;
+
                 dataActivity.push({
                     id: doc.id,
                     name: data.name,
@@ -92,6 +100,81 @@ export default function MemberHome() {
                     distric: data.distric,
                     provice: data.provice,
                     startDate: formattedDate,
+                    registrations: allRegistrationsData.length,
+                });
+            }
+
+            setActivityList(dataActivity);
+        } catch (error) {
+            console.log("fetch Data error: ", error)
+        }
+        setIsLoading(false);
+    };
+
+    const getRegisteredActivity = async () => {
+        setIsLoading(true);
+        try {
+            const getRegisteredData = await firestore()
+                .collection("registrations")
+                .where("userID", "==", user.uid)
+                .get();
+
+            const dataActivity = [];
+
+            for (const doc of getRegisteredData.docs) {
+                const data = doc.data();
+
+                const getActivityData = await firestore()
+                    .collection("activities")
+                    .doc(data.activityID)
+                    .get()
+
+                const activityData = getActivityData.data();
+
+                // ดึง category จาก categoryID
+                const getCategory = await firestore()
+                    .collection("category")
+                    .doc(activityData.categoryID)
+                    .get();
+
+                const category = getCategory.data();
+
+                const firebaseTimestamp = new firestore.Timestamp(
+                    activityData.startDate.seconds,
+                    activityData.startDate.nanoseconds
+                );
+                const datetime = firebaseTimestamp.toDate();
+
+                const formattedDate = datetime.toLocaleString("th-TH", {
+                    timeZone: "Asia/Bangkok",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                });
+
+                // จำนวนคนเข้าร่วมทั้งหมด
+                const allRegistrations = await firestore()
+                    .collection("registrations")
+                    .where("activityID", "==", data.activityID)
+                    .get();
+
+                const allRegistrationsData = allRegistrations.docs;
+
+                dataActivity.push({
+                    id: data.activityID,
+                    name: activityData.name,
+                    category: category.name,
+                    description: activityData.description,
+                    max: activityData.max,
+                    status: activityData.status,
+                    locationName: activityData.locationName,
+                    subdistric: activityData.subdistric,
+                    distric: activityData.distric,
+                    provice: activityData.provice,
+                    startDate: formattedDate,
+                    registrations: allRegistrationsData.length,
                 });
             }
 
@@ -105,7 +188,11 @@ export default function MemberHome() {
     const onRefresh = () => {
         setRefreshing(true);
 
-        getOwnerActivity();
+        if (tab === "owner") {
+            getOwnerActivity();
+        } else {
+            getRegisteredActivity();
+        }
 
         setRefreshing(false);
     };
@@ -114,7 +201,7 @@ export default function MemberHome() {
         if (tab === "owner") {
             getOwnerActivity();
         } else {
-            setActivityList([]);
+            getRegisteredActivity();
         }
     }, [tab]);
 
@@ -209,7 +296,7 @@ export default function MemberHome() {
                                         <View style={{flexDirection: "row", alignItems: "center"}}>
                                             <AntDesign name="user" color="black" size={14} />
                                             <Text style={styles.activityHead}>
-                                                0/{item.max}
+                                                {item.registrations}/{item.max}
                                             </Text>
                                         </View>
                                         <Text style={styles.activityHead}>

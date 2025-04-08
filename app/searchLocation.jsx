@@ -1,6 +1,6 @@
 import "react-native-get-random-values";
 import { StyleSheet, View, Text } from "react-native";
-import React from "react";
+import React, { useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
 import { router, useLocalSearchParams } from "expo-router";
@@ -49,10 +49,15 @@ export default function SearchLocation() {
             pathname: params.backRoute,
             params: {
                 editId: params.id || "",
-                form: JSON.stringify(params), // แปลง form เป็น JSON String
-                place: JSON.stringify(locationData), // แปลง place เป็น JSON String
+                form: JSON.stringify({
+                    ...params,
+                    // activityImage: params.activityImage ? encodeURIComponent(params.activityImage) : "",
+                    // cacheImage: params.cacheImage ? encodeURIComponent(params.cacheImage) : ""
+                }),
+                place: JSON.stringify(locationData),
             },
         });
+        
     };
 
     return (

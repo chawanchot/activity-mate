@@ -13,9 +13,6 @@ export default function Index() {
             if (!loggedIn) {
                 // ถ้ายังไม่ได้ล็อกอิน ให้เปลี่ยนไปที่หน้า login
                 router.replace("/login");
-            } else if (!user.idCardNumber) {
-                // ถ้ายังไม่มีเลขบัตรประชาชน ให้เปลี่ยนไปที่หน้า verify
-                router.replace("/verify");
             } else if (user.role === "admin") {
                 // admin ให้เปลี่ยนไปที่หน้า dashboard ของ admin
                 router.replace("/(admin)/home");

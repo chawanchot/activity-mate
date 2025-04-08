@@ -17,7 +17,7 @@ export default function AdminHome() {
             <ScrollView style={{ flex: 1, padding: 14 }}>
                 <TouchableOpacity
                     style={styles.button}
-                    onPress={() => console.log(`Pressed: จัดการสมาชิก`)}
+                    onPress={() => router.push("/users")}
                 >
                     <AntDesign
                         name="user"
@@ -56,7 +56,7 @@ export default function AdminHome() {
 
                 <TouchableOpacity
                     style={styles.button}
-                    onPress={() => console.log(`Pressed: จัดการรีวิวและคะแนน`)}
+                    onPress={() => router.push("/report")}
                 >
                     <MaterialIcons
                         name="report-gmailerrorred"

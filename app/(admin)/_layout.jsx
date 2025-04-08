@@ -61,6 +61,26 @@ export default function AdminLayout() {
                     },
                 }}
             />
+            <Stack.Screen
+                name="report"
+                options={{
+                    headerTitle: "การแจ้งรายงานจากผู้ใช้",
+                    headerTitleAlign: "center",
+                    headerTitleStyle: {
+                        fontFamily: "Kanit_600SemiBold",
+                    },
+                }}
+            />
+            <Stack.Screen
+                name="users"
+                options={{
+                    headerTitle: "จัดการสมาชิก",
+                    headerTitleAlign: "center",
+                    headerTitleStyle: {
+                        fontFamily: "Kanit_600SemiBold",
+                    },
+                }}
+            />
         </Stack>
     );
 }
