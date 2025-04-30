@@ -1,59 +1,110 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
+import { Alert } from "react-native";
+import { router } from "expo-router";
 
-// สร้าง Context
 const AuthContext = createContext();
 
-// สร้าง Provider
 export const AuthProvider = ({ children }) => {
-    const db = firestore();
-
-    const [user, setUser] = useState(null); // State สำหรับเก็บข้อมูลผู้ใช้
+    const [user, setUser] = useState(null);
     const [loggedIn, setLoggedIn] = useState(false);
-    const [isLoading, setIsLoading] = useState(true); // State สำหรับตรวจสอบการโหลด
+    const [isLoading, setIsLoading] = useState(true);
 
-    // ฟังก์ชันสำหรับตรวจสอบสถานะการเข้าสู่ระบบ
     useEffect(() => {
         const subscriber = auth().onAuthStateChanged(async (data) => {
-            setIsLoading(true); // เริ่มต้นโหลดข้อมูล
+            setIsLoading(true);
+
             if (data) {
                 try {
-                    // ดึงข้อมูลผู้ใช้จาก Firestore
-                    const userDoc = await db.collection("users").doc(data.uid).get();
+                    // ตรวจสอบข้อมูลใน suspended
+                    const suspendedDocRef = firestore().collection("suspended").doc(data.uid);
+                    const suspendedDoc = await suspendedDocRef.get();
 
-                    if (userDoc.exists) {
-                        setUser(userDoc.data()); // อัปเดต State `user` ด้วยข้อมูลจาก Firestore
-                    } else {
-                        // ถ้าไม่มีข้อมูลใน Firestore ให้สร้างใหม่
-                        const newUser = {
-                            uid: data.uid,
-                            username: data.displayName || "Unknown User",
-                            email: data.email,
-                            profilePicture: data.photoURL || "",
-                            role: "member",
-                            status: true,
-                            verify: false,
-                            idCardNumber: "",
-                        };
-                        // เพิ่มข้อมูลในฐานข้อมูล
-                        await db.collection("users").doc(data.uid).set(newUser);
-                        // อัปเดต State ด้วยข้อมูลที่สร้าง
-                        setUser(newUser); 
+                    let isSuspended = false;
+                    let suspendEndDate = null;
+
+                    if (suspendedDoc.exists) {
+                        const suspendedData = suspendedDoc.data();
+                        suspendEndDate = new Date(suspendedData.suspendEnd);
+                        const currentDate = new Date();
+
+                        if (currentDate > suspendEndDate) {
+                            // ถ้าเลยวันที่ระงับแล้ว
+                            await firestore()
+                                .collection("users")
+                                .doc(data.uid)
+                                .set({ status: true }, { merge: true }); // อัปเดต status เป็น true
+                        } else {
+                            // ถ้ายังไม่เลยวันที่ระงับ
+                            isSuspended = true;
+                        }
                     }
 
-                    setLoggedIn(true);
+                    // ฟังข้อมูลผู้ใช้แบบเรียลไทม์
+                    const unsubscribe = firestore()
+                        .collection("users")
+                        .doc(data.uid)
+                        .onSnapshot(
+                            async (doc) => {
+                                if (doc.exists) {
+                                    const userData = { uid: data.uid, ...doc.data()}
+                                    setUser(userData);
+                                    setLoggedIn(true);
+
+                                    // ตรวจสอบสถานะและการระงับ
+                                    if (isSuspended || !userData.status) {
+                                        await auth().signOut();
+                                        setUser(null);
+                                        setLoggedIn(false);
+                                        router.replace("/login");
+
+                                        Alert.alert(
+                                            "บัญชีถูกระงับ",
+                                            `บัญชีของคุณถูกระงับจนถึง ${suspendEndDate.toLocaleString()}`,
+                                            [
+                                                { text: "ตกลง" },
+                                            ]
+                                        );
+                                    }
+                                } else {
+                                    const newUser = {
+                                        username: data.displayName || "Unknown User",
+                                        email: data.email,
+                                        profilePicture: data.photoURL || "",
+                                        role: "member",
+                                        status: true,
+                                    };
+
+                                    await firestore()
+                                        .collection("users")
+                                        .doc(data.uid)
+                                        .set(newUser);
+
+                                    setUser({ uid: data.uid, ...newUser });
+                                    setLoggedIn(true);
+                                }
+                                setIsLoading(false);
+                            },
+                            (error) => {
+                                console.error("Error fetching user data:", error);
+                                setIsLoading(false);
+                            }
+                        );
+
+                    return () => unsubscribe();
                 } catch (error) {
-                    console.error("Error fetching user data:", error);
+                    console.error("Error setting up user listener:", error);
+                    setIsLoading(false);
                 }
             } else {
                 setLoggedIn(false);
-                setUser(null); // เคลียร์ข้อมูลผู้ใช้เมื่อออกจากระบบ
+                setUser(null);
+                setIsLoading(false);
             }
-            setIsLoading(false); // เสร็จสิ้นการโหลด
         });
 
-        return subscriber; // ยกเลิกการติดตามเมื่อ component ถูกทำลาย
+        return subscriber;
     }, []);
 
     return (
@@ -63,7 +114,6 @@ export const AuthProvider = ({ children }) => {
     );
 };
 
-// Hook สำหรับใช้งาน Context
 export const useAuth = () => {
     return useContext(AuthContext);
 };

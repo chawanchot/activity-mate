@@ -1,6 +1,6 @@
 import "react-native-get-random-values";
 import { StyleSheet, View, Text } from "react-native";
-import React from "react";
+import React, { useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
 import { router, useLocalSearchParams } from "expo-router";
@@ -8,14 +8,16 @@ import { router, useLocalSearchParams } from "expo-router";
 export default function SearchLocation() {
     const params = useLocalSearchParams();
 
+    // ฟังก์ชันสำหรับเลือกสถานที่
     const placeSelect = (data, details) => {
-        const address = details.address_components;
-        const location = details.geometry.location;
+        const address = details.address_components; // ดึงข้อมูลที่อยู่จากรายละเอียดสถานที่
+        const location = details.geometry.location; // ดึงพิกัดสถานที่
 
         let subdistrict = "";
         let district = "";
         let provice = "";
 
+         // แยกประเภทข้อมูลที่อยู่
         address.forEach((item) => {
             if (
                 item.types.includes("locality") ||
@@ -47,10 +49,15 @@ export default function SearchLocation() {
             pathname: params.backRoute,
             params: {
                 editId: params.id || "",
-                form: JSON.stringify(params), // แปลง form เป็น JSON String
-                place: JSON.stringify(locationData), // แปลง place เป็น JSON String
+                form: JSON.stringify({
+                    ...params,
+                    // activityImage: params.activityImage ? encodeURIComponent(params.activityImage) : "",
+                    // cacheImage: params.cacheImage ? encodeURIComponent(params.cacheImage) : ""
+                }),
+                place: JSON.stringify(locationData),
             },
         });
+        
     };
 
     return (
@@ -64,7 +71,7 @@ export default function SearchLocation() {
                         language: "th",
                         components: "country:th",
                     }}
-                    fetchDetails={true}
+                    fetchDetails={true} // ดึงรายละเอียดของสถานที่
                     styles={{
                         textInputContainer: {
                             backgroundColor: "#FFF5F5",

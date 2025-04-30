@@ -9,6 +9,7 @@ import {
     Linking,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import * as MediaLibrary from "expo-media-library";
 import storage from "@react-native-firebase/storage";
 import firestore from "@react-native-firebase/firestore";
 import { useAuth } from "../contexts/AuthContext";
@@ -25,7 +26,7 @@ const EditProfile = () => {
     // ขอสิทธิ์การเข้าถึงรูปภาพ
     useEffect(() => {
         const requestPermission = async () => {
-            const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            const permission = await MediaLibrary.requestPermissionsAsync();
             if (permission.status !== "granted") {
                 Alert.alert(
                     "ขออภัย", 

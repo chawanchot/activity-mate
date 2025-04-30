@@ -1,18 +1,26 @@
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
-import { FontAwesome5 } from "@expo/vector-icons";
+import { 
+    StyleSheet, 
+    View, 
+    Text, 
+    TextInput, 
+    TouchableOpacity, 
+    Alert, 
+    ActivityIndicator,
+    Image,
+    ScrollView
+} from "react-native";
+import { FontAwesome5, MaterialCommunityIcons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import DropDownPicker from "react-native-dropdown-picker";
 import firestore from "@react-native-firebase/firestore";
 import { router, useLocalSearchParams } from "expo-router";
-import { useAuth } from "../contexts/AuthContext"
+import * as ImagePicker from "expo-image-picker";
+import storage from "@react-native-firebase/storage";
 
 export default function EditActivity() {
-    const dbActivities = firestore().collection("activities");
-    const dbCategory = firestore().collection("category");
     const params = useLocalSearchParams(); 
-    const { user } = useAuth();
     const [loading, setLoading] = useState(true);
 
     // วันที่/เวลา เริ่มกิจกรรม
@@ -32,9 +40,37 @@ export default function EditActivity() {
     const [max, setMax] = useState(0); // จำนวนคนเข้าร่วม
     const [place, setPlace] = useState(null); // ข้อมูลสถานที่
     const [selectedCategory, setSelectedCategory] = useState(); // หมวดหมู่ที่เลือก
-
+    const [activityImage, setActivityImage] = useState("") // รูปภาพ
+    const [cacheImage, setCacheImage] = useState(""); // บันทึกรูปไว้กรณีเปลี่ยนรูปใหม่
+    
+    const [creating, setCreating] = useState(false);
     const [open, setOpen] = useState(false);
     const [categories, setCategories] = useState([]);
+
+    // เลือกรูปภาพจากอุปกรณ์
+    const pickImage = async () => {
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ["images"],
+            allowsEditing: true, // แก้ไขภาพ
+            aspect: [1, 1], // อัตราส่วนภาพ
+            quality: 0.5, // ความคมชัด
+            });
+
+        if (!result.canceled) {
+            setActivityImage(result.assets[0].uri);
+        }
+    };
+
+    // อัปโหลดรูปภาพไปยัง Firebase Cloud Storage
+    const uploadImage = async (uri) => {
+        const filename = uri.substring(uri.lastIndexOf("/") + 1);
+        const reference = storage().ref(`activity/${filename}`);
+        
+        await reference.putFile(uri);
+        const url = await reference.getDownloadURL();
+
+        return url;
+    };
 
     const submit = async () => {
         if (name && description && max > 0 && place && selectedCategory) {
@@ -60,6 +96,33 @@ export default function EditActivity() {
             const endTimestamp = firestore.Timestamp.fromDate(combinedEndDateTime);
 
             try {
+                setCreating(true);
+
+                let imageUrl = activityImage.replace(/activity\//g, 'activity%2F');
+
+                if (activityImage.startsWith("file://") || activityImage === "") {
+                    if (activityImage !== "") {
+                        imageUrl = await uploadImage(activityImage);
+                    }
+
+                    // เช็คว่ารูปเดิมอยู่ใน Cloud Storage
+                    if (cacheImage.startsWith("https://firebase") && cacheImage !== "") {
+    
+                        // ลบรูปเดิมใน Cloud Storage
+                        try {
+                            // ดึงชื่อไฟล์จาก URL
+                            const encoded = cacheImage.replace(/activity\//g, 'activity%2F');
+                            const filename = encoded.split("/").pop().split("?")[0].replace("activity%2F", "");
+                            const reference = storage().ref(`activity/${filename}`);
+
+                            // ลบไฟล์
+                            await reference.delete();
+                        } catch (error) {
+                            console.error("Error delete image:", error);
+                        }
+                    }
+                }
+
                 await firestore()
                     .collection("activities")
                     .doc(params.editId || params.id)
@@ -75,7 +138,8 @@ export default function EditActivity() {
                         latitund: place.location.lat,
                         longitund: place.location.lng,
                         startDate: startTimestamp,
-                        endDate: endTimestamp
+                        endDate: endTimestamp,
+                        image: imageUrl
                     });
 
                 console.log(`Document ${params.editId || params.id} updated`);
@@ -87,8 +151,13 @@ export default function EditActivity() {
                 setMax(0);
                 setPlace(null);
                 setSelectedCategory("");
+                setActivityImage("");
+                setCacheImage("");
+
+                setCreating(false);
             } catch (error) {
                 console.error("Error update document:", error);
+                setCreating(false);
             }
         } else {
             Alert.alert("", "ข้อมูลไม่ครบถ้วน");
@@ -102,69 +171,67 @@ export default function EditActivity() {
         return datetime;
     }
 
-    useEffect(() => {
-        const getCategory = async () => {
-            try {
-                const fetchCategory = await firestore()
-                    .collection("category")
-                    .get();
-        
-                const dataCategory = [];
+    const getActivityData = async () => {
+        setLoading(true);
+        try {
+            const fetchActivity = await firestore()
+                .collection("activities")
+                .doc(params.id)
+                .get();
 
-                for (const doc of fetchCategory.docs) {
-                    const data = doc.data();
+            const activityData = fetchActivity.data();
 
-                    dataCategory.push({
-                        id: doc.id,
-                        ...data
-                    });
-                }
-        
-                setCategories(dataCategory);
-            } catch (error) {
-                console.log("fetch category error: ", error);
+            if (activityData) {
+                setName(activityData.name);
+                setDescription(activityData.description);
+                setMax(activityData.max.toString());
+                setSelectedCategory(activityData.categoryID);
+                setPlace({
+                    name: activityData.locationName,
+                    subdistrict: activityData.subDistrict,
+                    district: activityData.district,
+                    provice: activityData.provice,
+                    location: {
+                        lat: activityData.latitund,
+                        lng: activityData.longitund
+                    },
+                })
+                setActivityImage(activityData.image);
+                setCacheImage(activityData.image);
+                setStartDate(convertDateTime(activityData.startDate));
+                setStartTime(convertDateTime(activityData.startDate));
+                setEndDate(convertDateTime(activityData.endDate));
+                setEndTime(convertDateTime(activityData.endDate));
             }
+        } catch (error) {
+            console.log("fetch activity data error: ", error);
         }
 
-        const getActivityData = async () => {
-            setLoading(true);
-            try {
-                const fetchActivity = await firestore()
-                    .collection("activities")
-                    .doc(params.id)
-                    .get();
+        setLoading(false);
+    };
 
-                const activityData = fetchActivity.data();
+    useEffect(() => {
+        getActivityData()
 
-                if (activityData) {
-                    setName(activityData.name);
-                    setDescription(activityData.description);
-                    setMax(activityData.max.toString());
-                    setSelectedCategory(activityData.categoryID);
-                    setPlace({
-                        name: activityData.locationName,
-                        subdistrict: activityData.subDistrict,
-                        district: activityData.district,
-                        provice: activityData.provice,
-                        location: {
-                            lat: activityData.latitund,
-                            lng: activityData.longitund
-                        },
-                    })
-                    setStartDate(convertDateTime(activityData.startDate));
-                    setStartTime(convertDateTime(activityData.startDate));
-                    setEndDate(convertDateTime(activityData.endDate));
-                    setEndTime(convertDateTime(activityData.endDate));
+        const getCategory = firestore()
+            .collection("category")
+            .where("status", "!=", false)
+            .onSnapshot(
+                (snapshot) => {
+                    const dataCategory = snapshot.docs.map((doc) => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                    
+                    setCategories(dataCategory);
+                },
+                (error) => {
+                    console.error("Error fetching category: ", error);
                 }
-            } catch (error) {
-                console.log("fetch activity data error: ", error);
-            }
+            )
 
-            setLoading(false);
-        };
-
-        getCategory();
-        getActivityData();
+        // หยุดการติดตามข้อมูลใน firestore
+        return () => getCategory();
     }, []);
 
     useEffect(() => {
@@ -184,6 +251,8 @@ export default function EditActivity() {
             setEndTime(new Date(formData.endTime));
             setMax(formData.max);
             setSelectedCategory(formData.selectedCategory);
+            setActivityImage(formData.activityImage);
+            setCacheImage(formData.cacheImage);
         }
     }, [params.place, params.form]);    
 
@@ -199,223 +268,250 @@ export default function EditActivity() {
 
     return (
         <SafeAreaView style={styles.container} key={params.id}>
-            <View>
-                {/* Form */}
-                <View style={{ paddingHorizontal: 18 }}>
-                    {/* ชื่อกิจกรรม */}
-                    <Text style={styles.label}>ชื่อกิจกรรม</Text>
-                    <View style={styles.inputContainer}>
-                        <FontAwesome5 name="pen" size={16} color="#A6A6A6" />
-                        <TextInput
-                            style={styles.input}
-                            value={name}
-                            onChangeText={setName}
-                        />
-                    </View>
-
-                    {/* รายละเอียด */}
-                    <Text style={styles.label}>รายละเอียด</Text>
-                    <View style={styles.inputContainer}>
-                        <FontAwesome5
-                            name="align-left"
-                            size={16}
-                            color="#A6A6A6"
-                        />
-                        <TextInput
-                            style={styles.input}
-                            value={description}
-                            onChangeText={setDescription}
-                        />
-                    </View>
-
-                    {/* วันที่เริ่มต้น / เวลาที่เริ่มต้น */}
-                    <Text style={styles.label}>วันที่/เวลา เริ่มกิจกรรม</Text>
-                    <View style={styles.dateTimeContainer}>
-                        <View style={styles.dateTimeInput}>
-                            <FontAwesome5 name="calendar" size={16} color="#D675A7" />
-                            <TouchableOpacity
-                                onPress={() => setShowStartDatePicker(true)}
-                                style={{ flex: 1, marginLeft: 8 }}
-                            >
-                                <Text style={styles.dateTimeText}>
-                                    {startDate.toLocaleDateString("th-TH")}
-                                </Text>
-                            </TouchableOpacity>
+            <ScrollView style={{ flex: 1, marginVertical: 10 }}>
+                <View>
+                    {/* Form */}
+                    <View style={{ paddingHorizontal: 18 }}>
+                        {/* ชื่อกิจกรรม */}
+                        <Text style={styles.label}>ชื่อกิจกรรม</Text>
+                        <View style={styles.inputContainer}>
+                            <FontAwesome5 name="pen" size={16} color="#A6A6A6" />
+                            <TextInput
+                                style={styles.input}
+                                value={name}
+                                onChangeText={setName}
+                            />
                         </View>
-                        {showStartDatePicker && (
-                            <DateTimePicker
-                                value={startDate}
-                                mode="date"
-                                onChange={(event, selected) => {
-                                    setShowStartDatePicker(false);
-                                    if (selected) {
-                                        setStartDate(selected);
-                                    }
+
+                        {/* รายละเอียด */}
+                        <Text style={styles.label}>รายละเอียด</Text>
+                        <View style={styles.inputContainer}>
+                            <FontAwesome5
+                                name="align-left"
+                                size={16}
+                                color="#A6A6A6"
+                            />
+                            <TextInput
+                                style={styles.input}
+                                value={description}
+                                onChangeText={setDescription}
+                            />
+                        </View>
+
+                        {/* วันที่เริ่มต้น / เวลาที่เริ่มต้น */}
+                        <Text style={styles.label}>วันที่/เวลา เริ่มกิจกรรม</Text>
+                        <View style={styles.dateTimeContainer}>
+                            <View style={styles.dateTimeInput}>
+                                <FontAwesome5 name="calendar" size={16} color="#D675A7" />
+                                <TouchableOpacity
+                                    onPress={() => setShowStartDatePicker(true)}
+                                    style={{ flex: 1, marginLeft: 8 }}
+                                >
+                                    <Text style={styles.dateTimeText}>
+                                        {startDate.toLocaleDateString("th-TH")}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                            {showStartDatePicker && (
+                                <DateTimePicker
+                                    value={startDate}
+                                    mode="date"
+                                    onChange={(event, selected) => {
+                                        setShowStartDatePicker(false);
+                                        if (selected) {
+                                            setStartDate(selected);
+                                        }
+                                    }}
+                                />
+                            )}
+                            <View style={styles.dateTimeInput}>
+                                <FontAwesome5 name="clock" size={16} color="#D675A7" />
+                                <TouchableOpacity
+                                    onPress={() => setShowStartTimePicker(true)}
+                                    style={{ flex: 1, marginLeft: 8 }}
+                                >
+                                    <Text style={styles.dateTimeText}>
+                                        {startTime.toLocaleTimeString("th-TH", {
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                        })}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                            {showStartTimePicker && (
+                                <DateTimePicker
+                                    value={startTime}
+                                    mode="time"
+                                    onChange={(event, selected) => {
+                                        setShowStartTimePicker(false);
+                                        if (selected) {
+                                            setStartTime(selected);
+                                        }
+                                    }}
+                                />
+                            )}
+                        </View>
+
+                        {/* วันที่สิ้นสุด / เวลาสิ้นสุด */}
+                        <Text style={styles.label}>วันที่/เวลา สิ้นสุดกิจกรรม</Text>
+                        <View style={styles.dateTimeContainer}>
+                            <View style={styles.dateTimeInput}>
+                                <FontAwesome5 name="calendar" size={16} color="#D675A7" />
+                                <TouchableOpacity
+                                    onPress={() => setShowEndDatePicker(true)}
+                                    style={{ flex: 1, marginLeft: 8 }}
+                                >
+                                    <Text style={styles.dateTimeText}>
+                                        {endDate.toLocaleDateString("th-TH")}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                            {showEndDatePicker && (
+                                <DateTimePicker
+                                    value={endDate}
+                                    mode="date"
+                                    display="default"
+                                    onChange={(event, selected) => {
+                                        setShowEndDatePicker(false);
+                                        if (selected) {
+                                            setEndDate(selected);
+                                        }
+                                    }}
+                                />
+                            )}
+                            <View style={styles.dateTimeInput}>
+                                <FontAwesome5 name="clock" size={16} color="#D675A7" />
+                                <TouchableOpacity
+                                    onPress={() => setShowEndTimePicker(true)}
+                                    style={{ flex: 1, marginLeft: 8 }}
+                                >
+                                    <Text style={styles.dateTimeText}>
+                                        {endTime.toLocaleTimeString("th-TH", {
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                        })}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                            {showEndTimePicker && (
+                                <DateTimePicker
+                                    value={endTime}
+                                    mode="time"
+                                    onChange={(event, selected) => {
+                                        setShowEndTimePicker(false);
+                                        if (selected) {
+                                            setEndTime(selected);
+                                        }
+                                    }}
+                                />
+                            )}
+                        </View>
+
+                        {/* จำนวนเข้าร่วมสูงสุด */}
+                        <Text style={styles.label}>จำนวนเข้าร่วมสูงสุด</Text>
+                        <View style={styles.inputContainer}>
+                            <FontAwesome5 name="users" size={16} color="#A6A6A6" />
+                            <TextInput
+                                style={styles.input}
+                                keyboardType="number-pad"
+                                value={max}
+                                onChangeText={setMax}
+                            />
+                        </View>
+
+                        {/* สถานที่ */}
+                        <Text style={styles.label}>สถานที่จัดกิจกรรม</Text>
+                        <TouchableOpacity
+                            onPress={() => router.push({
+                                pathname: "/searchLocation",
+                                params: {
+                                    id: params.id,
+                                    name,
+                                    description,
+                                    startDate,
+                                    startTime,
+                                    endDate,
+                                    endTime,
+                                    max,
+                                    selectedCategory,
+                                    activityImage,
+                                    cacheImage,
+                                    backRoute: "/editActivity",
+                                }
+                            })}
+                            style={styles.inputContainer}
+                        >
+                            <FontAwesome5 name="map-marker-alt" size={16} color="#A6A6A6" />
+                            <Text style={styles.input}>
+                                {place ? place.name : ""}
+                            </Text>
+                        </TouchableOpacity>
+
+                        {/* หมวดหมู่กิจกรรม */}
+                        <Text style={styles.label}>หมวดหมู่กิจกรรม</Text>
+                        <View style={styles.inputContainer}>
+                            <FontAwesome5 name="layer-group" size={16} color="#A6A6A6" />
+                            <DropDownPicker
+                                open={open}
+                                value={selectedCategory}
+                                items={categories.map((category) => ({
+                                    label: category.name,
+                                    value: category.id,
+                                }))}
+                                setOpen={setOpen}
+                                setValue={setSelectedCategory}
+                                dropDownDirection="BOTTOM" 
+                                listMode="SCROLLVIEW"
+                                placeholder=""
+                                style={{
+                                    backgroundColor: "#FFF5F5",
+                                    borderWidth: 0,
+                                    flex: 1,
+                                }}
+                                dropDownContainerStyle={{
+                                    backgroundColor: "#FFF5F5",
+                                }}
+                                labelStyle={{
+                                    fontFamily: "Kanit_400Regular",
+                                    fontSize: 18,
+                                    color: "black",
                                 }}
                             />
-                        )}
-                        <View style={styles.dateTimeInput}>
-                            <FontAwesome5 name="clock" size={16} color="#D675A7" />
-                            <TouchableOpacity
-                                onPress={() => setShowStartTimePicker(true)}
-                                style={{ flex: 1, marginLeft: 8 }}
-                            >
-                                <Text style={styles.dateTimeText}>
-                                    {startTime.toLocaleTimeString("th-TH", {
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                    })}
-                                </Text>
-                            </TouchableOpacity>
                         </View>
-                        {showStartTimePicker && (
-                            <DateTimePicker
-                                value={startTime}
-                                mode="time"
-                                onChange={(event, selected) => {
-                                    setShowStartTimePicker(false);
-                                    if (selected) {
-                                        setStartTime(selected);
-                                    }
-                                }}
-                            />
-                        )}
                     </View>
 
-                    {/* วันที่สิ้นสุด / เวลาสิ้นสุด */}
-                    <Text style={styles.label}>วันที่/เวลา สิ้นสุดกิจกรรม</Text>
-                    <View style={styles.dateTimeContainer}>
-                        <View style={styles.dateTimeInput}>
-                            <FontAwesome5 name="calendar" size={16} color="#D675A7" />
-                            <TouchableOpacity
-                                onPress={() => setShowEndDatePicker(true)}
-                                style={{ flex: 1, marginLeft: 8 }}
-                            >
-                                <Text style={styles.dateTimeText}>
-                                    {endDate.toLocaleDateString("th-TH")}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                        {showEndDatePicker && (
-                            <DateTimePicker
-                                value={endDate}
-                                mode="date"
-                                display="default"
-                                onChange={(event, selected) => {
-                                    setShowEndDatePicker(false);
-                                    if (selected) {
-                                        setEndDate(selected);
-                                    }
-                                }}
-                            />
-                        )}
-                        <View style={styles.dateTimeInput}>
-                            <FontAwesome5 name="clock" size={16} color="#D675A7" />
-                            <TouchableOpacity
-                                onPress={() => setShowEndTimePicker(true)}
-                                style={{ flex: 1, marginLeft: 8 }}
-                            >
-                                <Text style={styles.dateTimeText}>
-                                    {endTime.toLocaleTimeString("th-TH", {
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                    })}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                        {showEndTimePicker && (
-                            <DateTimePicker
-                                value={endTime}
-                                mode="time"
-                                onChange={(event, selected) => {
-                                    setShowEndTimePicker(false);
-                                    if (selected) {
-                                        setEndTime(selected);
-                                    }
-                                }}
-                            />
-                        )}
-                    </View>
-
-                    {/* จำนวนเข้าร่วมสูงสุด */}
-                    <Text style={styles.label}>จำนวนเข้าร่วมสูงสุด</Text>
-                    <View style={styles.inputContainer}>
-                        <FontAwesome5 name="users" size={16} color="#A6A6A6" />
-                        <TextInput
-                            style={styles.input}
-                            keyboardType="number-pad"
-                            value={max}
-                            onChangeText={setMax}
+                    {/* รูปภาพ */}
+                    <TouchableOpacity activeOpacity={0.8} onPress={pickImage}>
+                        <Text style={styles.uploadImageText}>แตะเพื่อเลือกรูปภาพ</Text>
+                        <Image 
+                            source={{ uri: activityImage !== "" ? activityImage.replace(/activity\//g, 'activity%2F') : "https://www.state.co.th/wp-content/uploads/2022/02/placeholder-1.png" }}
+                            style={styles.img}
                         />
-                    </View>
-
-                    {/* สถานที่ */}
-                    <Text style={styles.label}>สถานที่จัดกิจกรรม</Text>
-                    <TouchableOpacity
-                        onPress={() => router.push({
-                            pathname: "/searchLocation",
-                            params: {
-                                id: params.id,
-                                name,
-                                description,
-                                startDate,
-                                startTime,
-                                endDate,
-                                endTime,
-                                max,
-                                selectedCategory,
-                                backRoute: "/editActivity",
-                            }
-                        })}
-                        style={styles.inputContainer}
-                    >
-                        <FontAwesome5 name="map-marker-alt" size={16} color="#A6A6A6" />
-                        <Text className="flex-1 ml-2 text-xl font-kanit">
-                            {place ? place.name : ""}
-                        </Text>
                     </TouchableOpacity>
+                    {activityImage && (
+                        <TouchableOpacity 
+                            activeOpacity={0.8} 
+                            style={{ margin: "auto", marginBottom: 10 }}
+                            onPress={() => setActivityImage("")}
+                        >
+                            <MaterialCommunityIcons name="file-image-remove" size={25} color="red" />
+                        </TouchableOpacity>
+                    )}
 
-                    {/* หมวดหมู่กิจกรรม */}
-                    <Text style={styles.label}>หมวดหมู่กิจกรรม</Text>
-                    <View style={styles.inputContainer}>
-                        <FontAwesome5 name="layer-group" size={16} color="#A6A6A6" />
-                        <DropDownPicker
-                            open={open}
-                            value={selectedCategory}
-                            items={categories.map((category) => ({
-                                label: category.name,
-                                value: category.id,
-                            }))}
-                            setOpen={setOpen}
-                            setValue={setSelectedCategory}
-                            dropDownDirection="TOP" 
-                            placeholder=""
-                            style={{
-                                backgroundColor: "#FFF5F5",
-                                borderWidth: 0,
-                                flex: 1,
-                            }}
-                            dropDownContainerStyle={{
-                                backgroundColor: "#FFF5F5",
-                            }}
-                            labelStyle={{
-                                fontFamily: "Kanit_400Regular",
-                                fontSize: 18,
-                                color: "black",
-                            }}
-                        />
+                    {/* Button */}
+                    <View style={{ paddingHorizontal: 16 }}>
+                        <TouchableOpacity 
+                            onPress={submit} 
+                            style={styles.button}
+                            disabled={creating}
+                        >
+                            <Text style={styles.buttonText}>
+                                {creating ? "กำลังบันทึก..." : "แก้ไข"}
+                            </Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
-
-                {/* Button */}
-                <View style={{ paddingHorizontal: 16 }}>
-                    <TouchableOpacity onPress={submit} style={styles.button}>
-                        <Text style={styles.buttonText}>
-                            แก้ไข
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
+            </ScrollView>
         </SafeAreaView>
     );
 }
@@ -426,6 +522,20 @@ const styles = StyleSheet.create({
         backgroundColor: "white"
     },
     label: {
+        fontFamily: "Kanit_400Regular"
+    },
+    img: {
+        width: 180,
+        height: 180,
+        borderRadius: 15,
+        margin: "auto",
+        marginBottom: 10
+    },
+    uploadImageText: {
+        textAlign: "center",
+        color: "#666",
+        marginTop: 10,
+        marginBottom: 5,
         fontFamily: "Kanit_400Regular"
     },
     inputContainer: {

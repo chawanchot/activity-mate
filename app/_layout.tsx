@@ -1,4 +1,3 @@
-import "../global.css";
 import { Stack } from "expo-router";
 import { AuthProvider } from "./../contexts/AuthContext";
 import {
@@ -26,17 +25,6 @@ export default function RootLayout() {
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                 <Stack.Screen name="index" options={{ headerShown: false }} />
                 <Stack.Screen name="login" options={{ headerShown: false }} />
-                <Stack.Screen
-                    name="verify"
-                    options={{
-                        headerShown: true,
-                        headerTitle: "ยืนยันตัวตน",
-                        headerTitleAlign: "center",
-                        headerTitleStyle: {
-                            fontFamily: "Kanit_600SemiBold",
-                        },
-                    }}
-                />
                 <Stack.Screen
                     name="searchLocation"
                     options={{
@@ -71,6 +59,28 @@ export default function RootLayout() {
                     options={{
                         headerShown: true,
                         headerTitle: "แก้ไขข้อมูลส่วนตัว",
+                        headerTitleAlign: "center",
+                        headerTitleStyle: {
+                            fontFamily: "Kanit_600SemiBold",
+                        },
+                    }}
+                />
+                <Stack.Screen
+                    name="searchEventLocation"
+                    options={{
+                        headerShown: true,
+                        headerTitle: "ค้นหาสถานที่",
+                        headerTitleAlign: "center",
+                        headerTitleStyle: {
+                            fontFamily: "Kanit_600SemiBold",
+                        },
+                    }}
+                />
+                <Stack.Screen
+                    name="chat"
+                    options={{
+                        headerShown: false,
+                        headerTitle: "แชท",
                         headerTitleAlign: "center",
                         headerTitleStyle: {
                             fontFamily: "Kanit_600SemiBold",

@@ -17,7 +17,7 @@ export default function AdminHome() {
             <ScrollView style={{ flex: 1, padding: 14 }}>
                 <TouchableOpacity
                     style={styles.button}
-                    onPress={() => console.log(`Pressed: จัดการสมาชิก`)}
+                    onPress={() => router.push("/users")}
                 >
                     <AntDesign
                         name="user"
@@ -43,7 +43,7 @@ export default function AdminHome() {
 
                 <TouchableOpacity
                     style={styles.button}
-                    onPress={() => console.log(`Pressed: จัดการกิจกรรม`)}
+                    onPress={() => router.push("/manageActivity")}
                 >
                     <MaterialIcons
                         name="event"
@@ -56,20 +56,7 @@ export default function AdminHome() {
 
                 <TouchableOpacity
                     style={styles.button}
-                    onPress={() => console.log(`Pressed: จัดการรีวิวและคะแนน`)}
-                >
-                    <MaterialIcons
-                        name="reviews"
-                        size={24}
-                        color="#FFF600"
-                        style={styles.buttonIcon}
-                    />
-                    <Text style={styles.buttonText}>จัดการรีวิวและคะแนน</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={styles.button}
-                    onPress={() => console.log(`Pressed: จัดการรีวิวและคะแนน`)}
+                    onPress={() => router.push("/report")}
                 >
                     <MaterialIcons
                         name="report-gmailerrorred"
@@ -82,7 +69,7 @@ export default function AdminHome() {
 
                 <TouchableOpacity
                     style={styles.button}
-                    onPress={() => console.log(`Pressed: ประวัติการระงับบัญชี`)}
+                    onPress={() => router.push("/suspended")}
                 >
                     <FontAwesome5
                         name="user-lock"

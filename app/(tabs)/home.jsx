@@ -80,17 +80,101 @@ export default function MemberHome() {
                     year: "numeric",
                 });
 
+                // จำนวนคนเข้าร่วมทั้งหมด
+                const allRegistrations = await firestore()
+                    .collection("registrations")
+                    .where("activityID", "==", doc.id)
+                    .get();
+
+                const allRegistrationsData = allRegistrations.docs;
+
                 dataActivity.push({
                     id: doc.id,
                     name: data.name,
                     category: category.name,
                     description: data.description,
                     max: data.max,
+                    status: data.status,
                     locationName: data.locationName,
                     subdistric: data.subdistric,
                     distric: data.distric,
                     provice: data.provice,
                     startDate: formattedDate,
+                    registrations: allRegistrationsData.length,
+                });
+            }
+
+            setActivityList(dataActivity);
+        } catch (error) {
+            console.log("fetch Data error: ", error)
+        }
+        setIsLoading(false);
+    };
+
+    const getRegisteredActivity = async () => {
+        setIsLoading(true);
+        try {
+            const getRegisteredData = await firestore()
+                .collection("registrations")
+                .where("userID", "==", user.uid)
+                .get();
+
+            const dataActivity = [];
+
+            for (const doc of getRegisteredData.docs) {
+                const data = doc.data();
+
+                const getActivityData = await firestore()
+                    .collection("activities")
+                    .doc(data.activityID)
+                    .get()
+
+                const activityData = getActivityData.data();
+
+                // ดึง category จาก categoryID
+                const getCategory = await firestore()
+                    .collection("category")
+                    .doc(activityData.categoryID)
+                    .get();
+
+                const category = getCategory.data();
+
+                const firebaseTimestamp = new firestore.Timestamp(
+                    activityData.startDate.seconds,
+                    activityData.startDate.nanoseconds
+                );
+                const datetime = firebaseTimestamp.toDate();
+
+                const formattedDate = datetime.toLocaleString("th-TH", {
+                    timeZone: "Asia/Bangkok",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                });
+
+                // จำนวนคนเข้าร่วมทั้งหมด
+                const allRegistrations = await firestore()
+                    .collection("registrations")
+                    .where("activityID", "==", data.activityID)
+                    .get();
+
+                const allRegistrationsData = allRegistrations.docs;
+
+                dataActivity.push({
+                    id: data.activityID,
+                    name: activityData.name,
+                    category: category.name,
+                    description: activityData.description,
+                    max: activityData.max,
+                    status: activityData.status,
+                    locationName: activityData.locationName,
+                    subdistric: activityData.subdistric,
+                    distric: activityData.distric,
+                    provice: activityData.provice,
+                    startDate: formattedDate,
+                    registrations: allRegistrationsData.length,
                 });
             }
 
@@ -104,7 +188,11 @@ export default function MemberHome() {
     const onRefresh = () => {
         setRefreshing(true);
 
-        getOwnerActivity();
+        if (tab === "owner") {
+            getOwnerActivity();
+        } else {
+            getRegisteredActivity();
+        }
 
         setRefreshing(false);
     };
@@ -113,7 +201,7 @@ export default function MemberHome() {
         if (tab === "owner") {
             getOwnerActivity();
         } else {
-            setActivityList([]);
+            getRegisteredActivity();
         }
     }, [tab]);
 
@@ -196,12 +284,19 @@ export default function MemberHome() {
                                 })}
                             >
                                 <View style={styles.listContainer}>
+                                    {/* ข้อความกิจกรรมถูกยกเลิก */}
+                                    {item.status === "cancel" && (
+                                        <View style={styles.overlay}>
+                                            <Text style={styles.cancelText}>กิจกรรมถูกยกเลิก</Text>
+                                        </View>
+                                    )}
+
                                     {/* Header: จำนวนผู้เข้าร่วม */}
                                     <View style={{flexDirection: "row", alignItems: "center", justifyContent: "space-between"}}>
                                         <View style={{flexDirection: "row", alignItems: "center"}}>
                                             <AntDesign name="user" color="black" size={14} />
                                             <Text style={styles.activityHead}>
-                                                1/{item.max}
+                                                {item.registrations}/{item.max}
                                             </Text>
                                         </View>
                                         <Text style={styles.activityHead}>
@@ -317,7 +412,9 @@ const styles = StyleSheet.create({
         elevation: 5,
         marginBottom: 5,
         padding: 8,
-        height: 150
+        height: 150,
+        position: "relative", // ทำให้ซ้อนทับได้
+        overflow: "hidden",
     },
     activityHead: {
         color: "#6b7280",
@@ -355,5 +452,18 @@ const styles = StyleSheet.create({
         color: "#57595c",
         fontSize: 14,
         fontFamily: "Kanit_400Regular"
-    }
+    },
+    overlay: {
+        ...StyleSheet.absoluteFillObject, // ทำให้ครอบคลุมพื้นที่ทั้งหมด
+        backgroundColor: "rgba(60, 60, 60, 0.8)",
+        justifyContent: "center",
+        alignItems: "center",
+        zIndex: 10,
+    },
+    cancelText: {
+        color: "white",
+        fontSize: 24,
+        fontFamily: "Kanit_600SemiBold",
+    },
+
 })

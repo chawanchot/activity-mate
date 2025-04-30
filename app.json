@@ -4,13 +4,13 @@
     "slug": "activity-mate",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icons/app-logo.jpg",
+    "icon": "./assets/images/icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/activity_mate_logo.png",
-      "resizeMode": "contain",
+      "image": "./assets/icons/app-logo.png",
+      "resizeMode": "cover",
       "backgroundColor": "#ffffff"
     },
     "ios": {
@@ -28,7 +28,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icons/app-logo.jpg",
+        "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.murfdev.activitymateexpo",
@@ -57,11 +57,19 @@
         }
       ],
       "@react-native-google-signin/google-signin",
-      "@react-native-firebase/app",
+      [
+        "@react-native-firebase/app",
+        {
+          "disableWarnings": true
+        }
+      ],
       "@react-native-firebase/auth",
       [
         "expo-build-properties",
         {
+          "android": {
+            "kotlinVersion": "1.9.25"
+          },
           "ios": {
             "useFrameworks": "static"
           }
