@@ -41,7 +41,8 @@ export default function ManageActivity() {
             let query = firestore()
                 .collection("activities")
                 .where("status", "==", "ongoing")
-                .where("startDate", ">", currentDate); // กรองเฉพาะกิจกรรมที่ startDate ยังไม่ถึง
+                .where("startDate", ">", currentDate)
+                .orderBy("startDate", "asc");
 
             if (selectedCategory !== "all") {
                 query = query.where("categoryID", "==", selectedCategory);

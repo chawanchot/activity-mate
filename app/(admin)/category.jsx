@@ -1,5 +1,17 @@
-import { StyleSheet, Text, View } from 'react-native'
-import React from 'react'
+import React, { useEffect, useState } from "react";
+import {
+    StyleSheet,
+    SafeAreaView,
+    Text,
+    TouchableOpacity,
+    View,
+    FlatList,
+    Modal,
+    TextInput,
+    Alert,
+} from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
+import firestore from "@react-native-firebase/firestore";
 
 export default function Category() {
     const db = firestore().collection("category");
@@ -269,10 +281,111 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "white",
+        padding: 6,
+    },
+    addButton: {
+        marginVertical: 6,
+        backgroundColor: "#5C77FE",
+        height: 50,
+        borderRadius: 10,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    addButtonText: {
+        color: "white",
+        fontSize: 16,
+        fontFamily: "Kanit_600SemiBold"
+    },
+    listContainer: {
+        backgroundColor: "white",
+        padding: 6,
+        borderRadius: 10,
+        elevation: 5,
+        marginBottom: 6
+    },
+    listContent: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center"
+    },
+    name: {
+        fontSize: 18,
+        fontFamily: "Kanit_600SemiBold"
+    },
+    buttonContainer: {
+        width: "25%",
+        justifyContent: "center",
+        alignItems: "center",
+        paddingHorizontal: 6,
+        gap: 3
+    },
+    manageBtn: {
+        width: "100%",
+        height: 30,
+        borderRadius: 5,
         justifyContent: "center",
         alignItems: "center"
     },
-    text: {
+    manageBtnText: {
+        color: "white",
+        fontFamily: "Kanit_400Regular"
+    },
+    modalContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center"
+    },
+    modalContent: {
+        backgroundColor: "white",
+        elevation: 5,
+        padding: 14,
+        width: "80%",
+        minHeight: 85,
+        justifyContent: "center",
+        alignItems: "center",
+        borderRadius: 10
+    },
+    modalHeader: {
+        fontFamily: "Kanit_600SemiBold",
+        fontSize: 16
+    },
+    modalCloseIcon: {
+        position: "absolute",
+        top: 10,
+        right: 10
+    },
+    inputContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#FFF5F5",
+        marginTop: 10,
+        borderRadius: 10,
+        height: 55,
+        paddingHorizontal: 10,
+        width: "100%",
+    },
+    input: {
+        flex: 1,
+        marginLeft: 10,
+        fontSize: 18,
+        fontFamily: "Kanit_400Regular",
+    },
+    modalFooter: {
+        width: "100%",
+        alignItems: "flex-end",
+        marginTop: 14
+    },
+    modalBtn: {
+        marginBottom: 2,
+        backgroundColor: "#5476FF",
+        width: 62,
+        height: 35,
+        borderRadius: 5,
+        justifyContent: "center",
+        alignItems: "center"
+    },
+    modalBtnText: {
+        color: "white",
         fontFamily: "Kanit_600SemiBold"
     }
 })

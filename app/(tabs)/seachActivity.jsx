@@ -36,7 +36,8 @@ export default function MemberSeachActivity() {
         try {
             let query = firestore()
                 .collection("activities")
-                .where("status", "==", "ongoing");
+                .where("status", "==", "ongoing")
+                .orderBy("startDate", "asc");
 
             if (selectedCategory !== "all") {
                 query = query.where("categoryID", "==", selectedCategory);
