@@ -62,6 +62,7 @@ export default function Chat() {
 
                         return {
                             id: doc.id,
+                            deleted: messageData.deleted,
                             message: messageData.message,
                             createdAt: messageData.createdAt.toDate(),
                             user: messageData.senderID,
@@ -84,6 +85,7 @@ export default function Chat() {
                     activityID: params.activityID,
                     senderID: user.uid,
                     message: newMessage,
+                    deleted: false,
                     createdAt: firestore.FieldValue.serverTimestamp(),
                 });
                 setNewMessage("");
@@ -145,12 +147,14 @@ export default function Chat() {
                         activeOpacity={1}
                         onLongPress={(event) => {
                             if (item.user !== user.uid) {
-                                setSelectedMessage(item);
-                                setMenuPosition({
-                                    x: event.nativeEvent.pageX,
-                                    y: event.nativeEvent.pageY,
-                                });
-                                setMenuVisible(true);
+                                if (!item.deleted) {
+                                    setSelectedMessage(item);
+                                    setMenuPosition({
+                                        x: event.nativeEvent.pageX,
+                                        y: event.nativeEvent.pageY,
+                                    });
+                                    setMenuVisible(true);
+                                }
                             }
                         }}
                     >
@@ -170,13 +174,12 @@ export default function Chat() {
                             <View
                                 style={[
                                     styles.messageBubble,
-                                    item.user === user.uid
-                                        ? styles.myBubble
-                                        : styles.otherBubble,
+                                    item.user === user.uid ? styles.myBubble : styles.otherBubble,
+                                    item.deleted && styles.deletedMessage, // ข้อความที่ถูกลบ
                                 ]}
                             >
                                 <Text style={styles.messageText}>
-                                    {item.message}
+                                    {item.deleted ? "ข้อความถูกลบ" : item.message}
                                 </Text>
                             </View>
                             <Text style={styles.timeText}>{item.datetime}</Text>
@@ -454,4 +457,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontFamily: "Kanit_400Regular",
     },
+    deletedMessage: {
+        backgroundColor: "#e6e3e3",
+    }
 });

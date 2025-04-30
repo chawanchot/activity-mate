@@ -43,7 +43,7 @@ export default function AdminHome() {
 
                 <TouchableOpacity
                     style={styles.button}
-                    onPress={() => console.log(`Pressed: จัดการกิจกรรม`)}
+                    onPress={() => router.push("/manageActivity")}
                 >
                     <MaterialIcons
                         name="event"
@@ -69,7 +69,7 @@ export default function AdminHome() {
 
                 <TouchableOpacity
                     style={styles.button}
-                    onPress={() => console.log(`Pressed: ประวัติการระงับบัญชี`)}
+                    onPress={() => router.push("/suspended")}
                 >
                     <FontAwesome5
                         name="user-lock"

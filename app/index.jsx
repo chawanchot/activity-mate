@@ -1,3 +1,5 @@
+globalThis.RNFB_SILENCE_MODULAR_DEPRECATION_WARNINGS = true;
+
 import { useEffect } from "react"; 
 import { router } from "expo-router"; 
 import { View, Text, ActivityIndicator } from "react-native";

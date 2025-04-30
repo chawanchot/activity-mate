@@ -81,6 +81,37 @@ export default function AdminLayout() {
                     },
                 }}
             />
+            <Stack.Screen
+                name="chat"
+                options={{
+                    headerShown: false,
+                    headerTitle: "แชทกิจกรรม",
+                    headerTitleAlign: "center",
+                    headerTitleStyle: {
+                        fontFamily: "Kanit_600SemiBold",
+                    },
+                }}
+            />
+            <Stack.Screen
+                name="manageActivity"
+                options={{
+                    headerTitle: "จัดการกิจกรรม",
+                    headerTitleAlign: "center",
+                    headerTitleStyle: {
+                        fontFamily: "Kanit_600SemiBold",
+                    },
+                }}
+            />
+            <Stack.Screen
+                name="suspended"
+                options={{
+                    headerTitle: "ประวัติการระงับบัญชี",
+                    headerTitleAlign: "center",
+                    headerTitleStyle: {
+                        fontFamily: "Kanit_600SemiBold",
+                    },
+                }}
+            />
         </Stack>
     );
 }

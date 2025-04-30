@@ -4,6 +4,7 @@ import {
     SafeAreaView,
     TouchableOpacity,
     Image,
+    Alert,
 } from "react-native";
 import React, { useEffect } from "react";
 import auth from "@react-native-firebase/auth";
@@ -15,16 +16,16 @@ import {
 import { LoginManager, AccessToken } from "react-native-fbsdk-next";
 import { useAuth } from "../contexts/AuthContext";
 import { router } from "expo-router";
+import firestore from "@react-native-firebase/firestore";
 
 export default function Login() {
-
     const { loggedIn } = useAuth();
 
     useEffect(() => {
         if (loggedIn) {
             router.replace("/"); // ถ้าล็อกอินอยู่แล้ว ให้เปลี่ยนไปหน้าแรก
         }
-    }, [loggedIn])
+    }, [loggedIn]);
 
     // ตั้งค่าการใช้งาน Google Sign-In
     GoogleSignin.configure({
@@ -35,64 +36,141 @@ export default function Login() {
     // ฟังก์ชันเข้าสู่ระบบด้วย Google
     const signInGoogle = async () => {
         try {
-            // ตรวจสอบว่ามี Google Play Services อยู่ในอุปกรณ์
             await GoogleSignin.hasPlayServices({
                 showPlayServicesUpdateDialog: true,
             });
 
-            // ขอรับข้อมูลบัญชี Google ของผู้ใช้
             const response = await GoogleSignin.signIn();
-
-            // สร้าง Credential ของ Google เพื่อใช้ใน Firebase
             const googleCredential = auth.GoogleAuthProvider.credential(
                 response?.data.idToken
             );
 
-            // เข้าสู่ระบบ Firebase ด้วย Credential ของ Google
-            return auth().signInWithCredential(googleCredential);
+            const userCredential = await auth().signInWithCredential(
+                googleCredential
+            );
+            const uid = userCredential.user.uid;
+
+            const userDocRef = firestore().collection("users").doc(uid);
+            const suspendedDocRef = firestore()
+                .collection("suspended")
+                .where("userID", "==", uid)
+                .orderBy("suspendedEnd", "desc") 
+                .limit(1);
+
+            // ตรวจสอบข้อมูลใน suspended
+            const suspendedDoc = await suspendedDocRef.get();
+            const userDoc = await userDocRef.get();
+
+            let isSuspended = false;
+            let suspendedEndDate = null;
+
+            if (!suspendedDoc.empty) {
+                const suspendedData = suspendedDoc.docs[0].data(); // ดึงเอกสารแรก
+                if (suspendedData && suspendedData.suspendedEnd) {
+                    suspendedEndDate = suspendedData.suspendedEnd.toDate();
+                    const currentDate = new Date();
+                    if (currentDate > suspendedEndDate) {
+                        await userDocRef.set({ status: true }, { merge: true }); // เพิ่ม merge เพื่อไม่ให้เขียนทับข้อมูลอื่น
+                    } else {
+                        isSuspended = true;
+                    }
+                }
+            }
+
+            if (isSuspended || (userDoc.exists && !userDoc.data().status)) {
+                auth().signOut();
+                Alert.alert(
+                    "บัญชีถูกระงับ",
+                    suspendedEndDate
+                        ? `บัญชีของคุณถูกระงับจนถึง ${suspendedEndDate.toLocaleString()}`
+                        : "บัญชีของคุณถูกระงับ กรุณาติดต่อผู้ดูแลระบบ",
+                    [{ text: "ตกลง" }]
+                );
+                return;
+            }
         } catch (error) {
             if (isErrorWithCode(error)) {
                 switch (error.code) {
                     case statusCodes.IN_PROGRESS:
-                        // กำลังดำเนินการเข้าสู่ระบบ
                         break;
                     case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
-                        // Google Play Services ไม่มี
                         break;
                     default:
-                        console.log(error);
+                        console.log("Google Sign-In Error:", error);
                 }
+            } else {
+                console.log("Google Sign-In Error:", error);
             }
         }
     };
 
     // ฟังก์ชันเข้าสู่ระบบด้วย Facebook
     const signInFacebook = async () => {
+        try {
+            const result = await LoginManager.logInWithPermissions([
+                "public_profile",
+                "email",
+            ]);
+            if (result.isCancelled) {
+                console.log("ผู้ใช้ยกเลิกกระบวนการเข้าสู่ระบบ");
+                return;
+            }
 
-        // ขอสิทธิ์เข้าสู่ระบบผ่าน Facebook
-        const result = await LoginManager.logInWithPermissions([
-            "public_profile",
-            "email",
-        ]);
+            const data = await AccessToken.getCurrentAccessToken();
+            if (!data) {
+                console.log("เกิดข้อผิดพลาดในการขอรับ Access Token");
+                return;
+            }
 
-        if (result.isCancelled) {
-            console.log("ผู้ใช้ยกเลิกกระบวนการเข้าสู่ระบบ");
+            const facebookCredential = auth.FacebookAuthProvider.credential(
+                data.accessToken
+            );
+            const userCredential = await auth().signInWithCredential(
+                facebookCredential
+            );
+            const uid = userCredential.user.uid;
+
+            const userDocRef = firestore().collection("users").doc(uid);
+            const suspendedDocRef = firestore()
+                .collection("suspended")
+                .where("userID", "==", uid)
+                .orderBy("suspendedEnd", "desc") 
+                .limit(1);
+
+            // ตรวจสอบข้อมูลใน suspended
+            const suspendedDoc = await suspendedDocRef.get();
+            const userDoc = await userDocRef.get();
+
+            let isSuspended = false;
+            let suspendedEndDate = null;
+
+            if (!suspendedDoc.empty) {
+                const suspendedData = suspendedDoc.docs[0].data(); // ดึงเอกสารแรก
+                if (suspendedData && suspendedData.suspendedEnd) {
+                    suspendedEndDate = suspendedData.suspendedEnd.toDate();
+                    const currentDate = new Date();
+                    if (currentDate > suspendedEndDate) {
+                        await userDocRef.set({ status: true }, { merge: true }); // เพิ่ม merge เพื่อไม่ให้เขียนทับข้อมูลอื่น
+                    } else {
+                        isSuspended = true;
+                    }
+                }
+            }
+
+            if (isSuspended || (userDoc.exists && !userDoc.data().status)) {
+                await auth().signOut();
+                Alert.alert(
+                    "บัญชีถูกระงับ",
+                    suspendedEndDate
+                        ? `บัญชีของคุณถูกระงับจนถึง ${suspendedEndDate.toLocaleString()}`
+                        : "บัญชีของคุณถูกระงับ กรุณาติดต่อผู้ดูแลระบบ",
+                    [{ text: "ตกลง" }]
+                );
+                return;
+            }
+        } catch (error) {
+            console.log("Facebook Sign-In Error:", error);
         }
-
-         // ขอรับ Access Token ของผู้ใช้ที่เข้าสู่ระบบ Facebook
-        const data = await AccessToken.getCurrentAccessToken();
-
-        if (!data) {
-            console.log("เกิดข้อผิดพลาดในการขอรับ Access Token");
-        }
-
-        // สร้าง Credential ของ Facebook เพื่อใช้ใน Firebase
-        const facebookCredential = auth.FacebookAuthProvider.credential(
-            data.accessToken
-        );
-
-        // เข้าสู่ระบบ Firebase ด้วย Credential ของ Facebook
-        return auth().signInWithCredential(facebookCredential);
     };
 
     return (
@@ -114,9 +192,7 @@ export default function Login() {
                     style={{ height: 30 }}
                     resizeMode="contain"
                 />
-                <Text style={styles.buttonText}>
-                    เข้าสู่ระบบด้วย Google
-                </Text>
+                <Text style={styles.buttonText}>เข้าสู่ระบบด้วย Google</Text>
             </TouchableOpacity>
 
             {/* ปุ่มเข้าสู่ระบบ Facebook */}
@@ -130,9 +206,7 @@ export default function Login() {
                     style={{ height: 30 }}
                     resizeMode="contain"
                 />
-                <Text style={styles.buttonText}>
-                    เข้าสู่ระบบด้วย Facebook
-                </Text>
+                <Text style={styles.buttonText}>เข้าสู่ระบบด้วย Facebook</Text>
             </TouchableOpacity>
         </SafeAreaView>
     );
@@ -143,11 +217,11 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "white"
+        backgroundColor: "white",
     },
     logo: {
         height: 150,
-        marginBottom: 75
+        marginBottom: 75,
     },
     button: {
         flexDirection: "row",
@@ -162,6 +236,6 @@ const styles = StyleSheet.create({
     },
     buttonText: {
         fontFamily: "Kanit_400Regular",
-        fontSize: 18
-    }
-})
+        fontSize: 18,
+    },
+});

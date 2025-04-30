@@ -57,7 +57,12 @@
         }
       ],
       "@react-native-google-signin/google-signin",
-      "@react-native-firebase/app",
+      [
+        "@react-native-firebase/app",
+        {
+          "disableWarnings": true
+        }
+      ],
       "@react-native-firebase/auth",
       [
         "expo-build-properties",

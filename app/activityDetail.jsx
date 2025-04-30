@@ -112,7 +112,11 @@ export default function ActivityDetail() {
                         .doc(params.id)
                         .update({ status: "cancel" })
                         .then(() => {
-                            router.replace("/(tabs)/home");
+                            if (user.role === "admin") {
+                                getActivityData();
+                            } else {
+                                router.replace("/(tabs)/home");
+                            }
                         })
                         .catch((error) => {
                             console.error("Error update cancel status:", error);
@@ -237,14 +241,19 @@ export default function ActivityDetail() {
 
                         {/* รูปภาพ */}
                         {activity.image && (
-                            <Image 
+                            <Image
                                 source={{ uri: activity.image }}
                                 style={styles.image}
                             />
                         )}
 
                         {/* สถานที่ */}
-                        <View style={[styles.locationContainer, !activity.image ? { marginTop: 15 } : ""]}>
+                        <View
+                            style={[
+                                styles.locationContainer,
+                                !activity.image ? { marginTop: 15 } : "",
+                            ]}
+                        >
                             <MaterialIcons
                                 name="location-on"
                                 size={24}
@@ -288,12 +297,7 @@ export default function ActivityDetail() {
                                 <Text style={styles.ownerName}>
                                     {activity.owner.username}
                                 </Text>
-                                <View
-                                    style={{
-                                        flexDirection: "row",
-                                        alignItems: "center",
-                                    }}
-                                >
+                                <View style={{ flexDirection: "row", alignItems: "center" }}>
                                     <FontAwesome
                                         name="star"
                                         size={16}
@@ -317,19 +321,13 @@ export default function ActivityDetail() {
                                     }}
                                 >
                                     {activity.registrations.map((item) => (
-                                        <View
-                                            key={item.id}
-                                            style={{ width: "50%" }}
-                                        >
+                                        <View key={item.id} style={{ width: "50%" }}>
                                             <View style={styles.registeredItem}>
                                                 <Image
                                                     source={{ uri: item.profilePicture }}
                                                     style={styles.registeredImage}
                                                 />
-                                                <Text
-                                                    style={styles.registeredName}
-                                                    numberOfLines={1}
-                                                >
+                                                <Text style={styles.registeredName} numberOfLines={1}>
                                                     {item.username}
                                                 </Text>
                                             </View>
@@ -341,137 +339,150 @@ export default function ActivityDetail() {
                     </View>
 
                     {/* ปุ่ม */}
-                    {activity.status === "ongoing" ? (
+                    {user.role === "admin" && (
                         <View style={{ marginBottom: 10, marginTop: 50 }}>
-                            {activity.createdByUserID === user.uid ? (
-                                <View>
-                                    <View style={styles.chatButtonContainer}>
-                                        <TouchableOpacity
-                                            activeOpacity={0.8}
-                                            style={styles.chatButton}
-                                            onPress={() => router.push({
-                                                pathname: "chat",
-                                                params: {
-                                                    activityID: params.id,
-                                                },
-                                            })}
-                                        >
-                                            <MaterialIcons
-                                                name="chat-bubble-outline"
-                                                color="white"
-                                                size={24}
-                                            />
-                                            <Text style={styles.chatButtonText}>
-                                                สนทนา
-                                            </Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                    <TouchableOpacity
-                                        activeOpacity={0.8}
-                                        style={styles.endActivityButton}
-                                    >
-                                        <Text style={styles.buttonText}>
-                                            สิ้นสุดกิจกรรม
-                                        </Text>
-                                    </TouchableOpacity>
-                                    <View
-                                        style={styles.editCancelButtonContainer}
-                                    >
-                                        <TouchableOpacity
-                                            activeOpacity={0.8}
-                                            onPress={() =>
-                                                router.push({
-                                                    pathname: "editActivity",
-                                                    params: {
-                                                        id: params.id,
-                                                    },
-                                                })
-                                            }
-                                            style={styles.editButton}
-                                        >
-                                            <Text style={styles.buttonText}>
-                                                แก้ไข
-                                            </Text>
-                                        </TouchableOpacity>
-                                        <TouchableOpacity
-                                            activeOpacity={0.8}
-                                            onPress={cancelActivity}
-                                            style={styles.cancelButton}
-                                        >
-                                            <Text style={styles.buttonText}>
-                                                ยกเลิกกิจกรรม
-                                            </Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                </View>
+                            {activity.status === "ongoing" ? (
+                                <TouchableOpacity
+                                    activeOpacity={0.8}
+                                    onPress={cancelActivity}
+                                    style={styles.cancelButton}
+                                >
+                                    <Text style={styles.buttonText}>
+                                        ยกเลิกกิจกรรม
+                                    </Text>
+                                </TouchableOpacity>
                             ) : (
-                                <View>
-                                    {/* ยังไม่ได้เข้าร่วม */}
-                                    {!registed ? (
-                                        <TouchableOpacity
-                                            activeOpacity={0.8}
-                                            style={styles.joinButton}
-                                        >
-                                            <Text
-                                                style={styles.joinButtonText}
-                                                onPress={joinActivity}
-                                            >
-                                                เข้าร่วมกิจกรรม
-                                            </Text>
-                                        </TouchableOpacity>
-                                    ) : (
-                                        // หลังจากเข้าร่วม
+                                // ข้อความยกเลิกกิจกรรม
+                                <Text style={styles.cancelText}>
+                                    กิจกรรมถูกยกเลิก
+                                </Text>
+                            )}
+                        </View>
+                    )}
+                    {user.role !== "admin" && (
+                        <>
+                            {activity.status === "ongoing" ? (
+                                <View style={{ marginBottom: 10, marginTop: 50 }}>
+                                    {activity.createdByUserID === user.uid ? (
                                         <View>
-                                            <View
-                                                style={
-                                                    styles.chatButtonContainer
-                                                }
-                                            >
+                                            <View style={styles.chatButtonContainer}>
                                                 <TouchableOpacity
                                                     activeOpacity={0.8}
                                                     style={styles.chatButton}
-                                                    onPress={() => router.push({
-                                                        pathname: "chat",
-                                                        params: {
-                                                            activityID: params.id,
-                                                        },
-                                                    })}
+                                                    onPress={() =>
+                                                        router.push({
+                                                            pathname: "chat",
+                                                            params: {
+                                                                activityID:
+                                                                    params.id,
+                                                            },
+                                                        })
+                                                    }
                                                 >
                                                     <MaterialIcons
                                                         name="chat-bubble-outline"
                                                         color="white"
                                                         size={24}
                                                     />
-                                                    <Text
-                                                        style={
-                                                            styles.chatButtonText
-                                                        }
-                                                    >
+                                                    <Text style={styles.chatButtonText}>
                                                         สนทนา
                                                     </Text>
                                                 </TouchableOpacity>
                                             </View>
                                             <TouchableOpacity
                                                 activeOpacity={0.8}
-                                                style={styles.unRegisterButton}
-                                                onPress={cancelRegistered}
+                                                style={styles.endActivityButton}
                                             >
-                                                <Text
-                                                    style={
-                                                        styles.unRegisterText
-                                                    }
-                                                >
-                                                    ยกเลิกการเข้าร่วม
+                                                <Text style={styles.buttonText}>
+                                                    สิ้นสุดกิจกรรม
                                                 </Text>
                                             </TouchableOpacity>
+                                            <View style={styles.editCancelButtonContainer}>
+                                                <TouchableOpacity
+                                                    activeOpacity={0.8}
+                                                    onPress={() =>
+                                                        router.push({
+                                                            pathname: "editActivity",
+                                                            params: {
+                                                                id: params.id,
+                                                            },
+                                                        })
+                                                    }
+                                                    style={styles.editButton}
+                                                >
+                                                    <Text style={styles.buttonText}>
+                                                        แก้ไข
+                                                    </Text>
+                                                </TouchableOpacity>
+                                                <TouchableOpacity
+                                                    activeOpacity={0.8}
+                                                    onPress={cancelActivity}
+                                                    style={styles.cancelButton}
+                                                >
+                                                    <Text style={styles.buttonText}>
+                                                        ยกเลิกกิจกรรม
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            </View>
+                                        </View>
+                                    ) : (
+                                        <View>
+                                            {/* ยังไม่ได้เข้าร่วม */}
+                                            {!registed ? (
+                                                <TouchableOpacity
+                                                    activeOpacity={0.8}
+                                                    style={styles.joinButton}
+                                                >
+                                                    <Text
+                                                        style={styles.joinButtonText}
+                                                        onPress={joinActivity}
+                                                    >
+                                                        เข้าร่วมกิจกรรม
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            ) : (
+                                                // หลังจากเข้าร่วม
+                                                <View>
+                                                    <View style={styles.chatButtonContainer}>
+                                                        <TouchableOpacity
+                                                            activeOpacity={0.8}
+                                                            style={styles.chatButton}
+                                                            onPress={() =>
+                                                                router.push({
+                                                                    pathname: "chat",
+                                                                    params: {
+                                                                        activityID: params.id,
+                                                                    },
+                                                                })
+                                                            }
+                                                        >
+                                                            <MaterialIcons name="chat-bubble-outline" color="white" size={24} />
+                                                            <Text style={styles.chatButtonText}>
+                                                                สนทนา
+                                                            </Text>
+                                                        </TouchableOpacity>
+                                                    </View>
+                                                    <TouchableOpacity
+                                                        activeOpacity={0.8}
+                                                        style={styles.unRegisterButton}
+                                                        onPress={cancelRegistered}
+                                                    >
+                                                        <Text style={styles.unRegisterText}>
+                                                            ยกเลิกการเข้าร่วม
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                </View>
+                                            )}
                                         </View>
                                     )}
                                 </View>
+                            ) : (
+                                // ข้อความยกเลิกกิจกรรม
+                                <Text style={styles.cancelText}>
+                                    กิจกรรมถูกยกเลิก
+                                </Text>
                             )}
-                        </View>
-                    ) : (
-                        // ข้อความยกเลิกกิจกรรม
-                        <Text style={styles.cancelText}>กิจกรรมถูกยกเลิก</Text>
+                        </>
                     )}
                 </View>
             </ScrollView>
@@ -659,12 +670,12 @@ const styles = StyleSheet.create({
         fontFamily: "Kanit_700Bold",
     },
     image: {
-        width: "100%", 
-        height: 350, 
-        marginHorizontal: "auto", 
-        marginVertical: 20, 
-        borderRadius: 15, 
-        elevation: 7, 
-        objectFit: "cover"
-    }
+        width: "100%",
+        height: 350,
+        marginHorizontal: "auto",
+        marginVertical: 20,
+        borderRadius: 15,
+        elevation: 7,
+        objectFit: "cover",
+    },
 });
