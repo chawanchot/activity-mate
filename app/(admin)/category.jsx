@@ -1,14 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native'
 import React from 'react'
 
-<<<<<<< HEAD
-export default function category() {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Category Page</Text>
-    </View>
-  )
-=======
 export default function Category() {
     const db = firestore().collection("category");
 
@@ -271,7 +263,6 @@ export default function Category() {
             </Modal>
         </SafeAreaView>
     );
->>>>>>> develop
 }
 
 const styles = StyleSheet.create({
