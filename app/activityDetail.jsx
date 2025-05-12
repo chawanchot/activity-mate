@@ -9,13 +9,16 @@ import {
     Linking,
     ScrollView,
     RefreshControl,
+    Modal,
+    TextInput,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
-import { MaterialIcons, FontAwesome, AntDesign } from "@expo/vector-icons";
+import { MaterialIcons, FontAwesome, AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
 import firestore from "@react-native-firebase/firestore";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../contexts/AuthContext";
+import DropDownPicker from "react-native-dropdown-picker";
 
 export default function ActivityDetail() {
     const params = useLocalSearchParams();
@@ -23,6 +26,11 @@ export default function ActivityDetail() {
     const [refreshing, setRefreshing] = useState(false);
     const [activity, setActivity] = useState(null);
     const [registed, setRegisted] = useState(false);
+    const [showModal, setShowModal] = useState(false);
+    const [openDropdown, setOpenDropdown] = useState(false);
+    const [rating, setRating] = useState("");
+    const [comment, setComment] = useState("");
+    const [showReviewBtn, setShowReviewBtn] = useState(true);
 
     const formatDateTime = (data) => {
         if (!data) return ""; // ตรวจสอบว่ามีข้อมูลก่อน
@@ -91,10 +99,32 @@ export default function ActivityDetail() {
                     });
                 }
 
+                const fetchReviews = await firestore()
+                    .collection("reviews")
+                    .where("activityID", "==", params.id)
+                    .get();
+
+                const ReviewsData = [];
+
+                for (const doc of fetchReviews.docs) {
+                    const data = doc.data();
+
+                    if (data.userID === user.uid) {
+                        setShowReviewBtn(false);
+                    }
+
+                    ReviewsData.push({
+                        id: doc.id,
+                        rating: data.rating,
+                        comment: data.comment,
+                    });
+                }
+
                 setActivity({
                     ...activityData,
                     owner: ownerData,
                     registrations: RegistrationsData,
+                    reviews: ReviewsData,
                 });
             });
     };
@@ -129,8 +159,33 @@ export default function ActivityDetail() {
         ]);
     };
 
+    const endActivity = async () => {
+        Alert.alert("", "ยืนยันสิ้นสุดกิจกรรม", [
+            {
+                text: "ยกเลิก",
+            },
+            {
+                text: "ยืนยัน",
+                onPress: () =>
+                    firestore()
+                        .collection("activities")
+                        .doc(params.id)
+                        .update({ status: "success" })
+                        .then(() => {
+                            getActivityData();
+                        })
+                        .catch((error) => {
+                            console.error("Error update cancel status:", error);
+                            Alert.alert(
+                                "เกิดข้อผิดพลาด",
+                                "ไม่สามารถสิ้นสุดกิจกรรมได้ กรุณาลองใหม่อีกครั้ง"
+                            );
+                        }),
+            },
+        ]);
+    };
+
     const joinActivity = () => {
-        console.log("CLICK JOIN");
         firestore()
             .collection("registrations")
             .add({
@@ -146,7 +201,6 @@ export default function ActivityDetail() {
     };
 
     const cancelRegistered = async () => {
-        console.log("CLICK CANCEL");
         try {
             const querySnapshot = await firestore()
                 .collection("registrations")
@@ -170,6 +224,29 @@ export default function ActivityDetail() {
             console.error("เกิดข้อผิดพลาดในการลบข้อมูล:", error);
         }
     };
+
+    const confirmReviews = () => {
+        if (comment && rating) {
+            firestore()
+            .collection("reviews")
+            .add({
+                userID: user.uid,
+                rating: rating,
+                comment: comment,
+                activityID: params.id, 
+            })
+            .then(() => {
+                setShowModal(false);
+                getActivityData();
+            })
+        } else {
+            Alert.alert("ผิดพลาด", "กรอกข้อมูลให้ครบถ้วน", [
+                {
+                    text: "ตกลง",
+                }
+            ]);
+        }
+    }
 
     const onRefresh = () => {
         setRefreshing(true);
@@ -297,14 +374,6 @@ export default function ActivityDetail() {
                                 <Text style={styles.ownerName}>
                                     {activity.owner.username}
                                 </Text>
-                                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                                    <FontAwesome
-                                        name="star"
-                                        size={16}
-                                        color="#FFD700"
-                                    />
-                                    <Text style={styles.ratingText}>4</Text>
-                                </View>
                             </View>
                         </View>
 
@@ -334,6 +403,34 @@ export default function ActivityDetail() {
                                         </View>
                                     ))}
                                 </View>
+                            </View>
+                        )}
+
+                        {/* ความคิดเห็นและคะแนน */}
+                        {activity.reviews.length > 0 && (
+                            <View>
+                                <Text style={styles.reviewsHeader}>
+                                    ความคิดเห็น
+                                </Text>
+                                {activity.reviews.map((item) => (
+                                    <View key={item.id}>
+                                        <View style={styles.reviewsItem}>
+                                            <View style={styles.reviewsRating}>
+                                                <FontAwesome
+                                                    name="star"
+                                                    size={16}
+                                                    color="#FFD700"
+                                                />
+                                                <Text style={styles.ratingText}>
+                                                    {item.rating}
+                                                </Text>
+                                            </View>
+                                            <Text style={styles.commentText}>
+                                                {item.comment}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                ))}
                             </View>
                         )}
                     </View>
@@ -392,6 +489,7 @@ export default function ActivityDetail() {
                                             <TouchableOpacity
                                                 activeOpacity={0.8}
                                                 style={styles.endActivityButton}
+                                                onPress={endActivity}
                                             >
                                                 <Text style={styles.buttonText}>
                                                     สิ้นสุดกิจกรรม
@@ -477,15 +575,144 @@ export default function ActivityDetail() {
                                     )}
                                 </View>
                             ) : (
-                                // ข้อความยกเลิกกิจกรรม
-                                <Text style={styles.cancelText}>
-                                    กิจกรรมถูกยกเลิก
-                                </Text>
+                                <>
+                                   {activity.status === "success" ? (
+                                        <View>
+                                            {activity.createdByUserID !== user.uid && (
+                                                <>
+                                                    {showReviewBtn && (
+                                                        <TouchableOpacity
+                                                            activeOpacity={0.8}
+                                                            style={styles.reviewButton}
+                                                            onPress={() => setShowModal(true)}
+                                                        >
+                                                            <Text style={styles.reviewText}>
+                                                                แสดงความคิดเห็นและให้คะแนน
+                                                            </Text>
+                                                        </TouchableOpacity>
+                                                    )}
+                                                </>
+                                            )}
+                                            <Text style={styles.endText}>
+                                                สิ้นสุดกิจกรรม
+                                            </Text>
+                                        </View>
+                                    ) : (
+                                        <Text style={styles.cancelText}>
+                                            กิจกรรมถูกยกเลิก
+                                        </Text>
+                                    )}
+                                    
+                                </>
                             )}
                         </>
                     )}
                 </View>
             </ScrollView>
+
+            {/* Modal แสดงความคิดเห็นและคะแนน */}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={showModal}
+                onRequestClose={() => {
+                    Alert.alert("Modal has been closed.");
+                    setShowModal(!showModal);
+                }}
+            >
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalHeader}>แสดงความคิดเห็นและให้คะแนน</Text>
+                        <TouchableOpacity
+                            activeOpacity={0.8}
+                            onPress={() => setShowModal(false)}
+                            style={styles.modalCloseIcon}
+                        >
+                            <MaterialIcons
+                                name="close"
+                                size={24}
+                                color="black"
+                            />
+                        </TouchableOpacity>
+                        {/* Dropdown จำนวนวัน */}
+                        <View style={styles.modalInputContainer}>
+                            <MaterialIcons
+                                name="star-border"
+                                size={24}
+                                color="#A6A6A6"
+                            />
+                            <DropDownPicker
+                                open={openDropdown}
+                                value={rating}
+                                items={[
+                                    {
+                                        label: "1",
+                                        value: 1,
+                                    },
+                                    {
+                                        label: "2",
+                                        value: 2,
+                                    },
+                                    {
+                                        label: "3",
+                                        value: 3,
+                                    },
+                                    {
+                                        label: "4",
+                                        value: 4,
+                                    },
+                                ]}
+                                setOpen={setOpenDropdown}
+                                setValue={setRating}
+                                placeholder="คะแนน"
+                                style={{
+                                    backgroundColor: "#FFF5F5",
+                                    borderWidth: 0,
+                                    flex: 1,
+                                    width: "95%",
+                                }}
+                                dropDownContainerStyle={{
+                                    backgroundColor: "#FFF5F5",
+                                    width: "95%",
+                                }}
+                                placeholderStyle={{
+                                    fontFamily: "Kanit_400Regular",
+                                    fontSize: 16,
+                                    color: "#A6A6A6",
+                                }}
+                                labelStyle={{
+                                    fontFamily: "Kanit_400Regular",
+                                    fontSize: 16,
+                                    color: "black",
+                                }}
+                            />
+                        </View>
+                        <View style={styles.modalInputContainer}>
+                            <MaterialCommunityIcons
+                                name="message-star-outline"
+                                size={24}
+                                color="#A6A6A6"
+                            />
+                            <TextInput
+                                style={styles.modalInput}
+                                placeholder="ความคิดเห็น"
+                                placeholderTextColor="#A6A6A6"
+                                value={comment}
+                                onChangeText={setComment}
+                            />
+                        </View>
+                        <View style={styles.modalFooter}>
+                            <TouchableOpacity
+                                activeOpacity={0.8}
+                                style={styles.modalBtn}
+                                onPress={confirmReviews}
+                            >
+                                <Text style={styles.modalBtnText}>ยืนยัน</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -549,6 +776,13 @@ const styles = StyleSheet.create({
         fontFamily: "Kanit_600SemiBold",
         fontSize: 16,
     },
+    reviewsHeader: {
+        color: "#374151",
+        marginTop: 25,
+        marginBottom: 6,
+        fontFamily: "Kanit_600SemiBold",
+        fontSize: 16,
+    },
     ownerContainer: {
         flexDirection: "row",
         alignItems: "center",
@@ -564,6 +798,11 @@ const styles = StyleSheet.create({
         fontFamily: "Kanit_400Regular",
     },
     ratingText: {
+        color: "#374151",
+        marginLeft: 4,
+        fontFamily: "Kanit_400Regular",
+    },
+    commentText: {
         color: "#374151",
         marginLeft: 4,
         fontFamily: "Kanit_400Regular",
@@ -641,7 +880,24 @@ const styles = StyleSheet.create({
         paddingBottom: 15,
         marginTop: 15,
     },
+    endText: {
+        color: "#07A424",
+        fontFamily: "Kanit_600SemiBold",
+        fontSize: 24,
+        marginHorizontal: "auto",
+        paddingBottom: 15,
+        marginTop: 15,
+    },
     registeredItem: {
+        flex: 1,
+        flexDirection: "row",
+        alignItems: "center",
+        paddingVertical: 2,
+    },
+    reviewsItem: {
+        paddingVertical: 2,
+    },
+    reviewsRating: {
         flex: 1,
         flexDirection: "row",
         alignItems: "center",
@@ -669,6 +925,19 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontFamily: "Kanit_700Bold",
     },
+    reviewButton: {
+        flexDirection: "row",
+        justifyContent: "center",
+        backgroundColor: "#FFEA00",
+        borderRadius: 8,
+        paddingVertical: 12,
+        marginTop: 16,
+    },
+    reviewText: {
+        color: "black",
+        fontSize: 16,
+        fontFamily: "Kanit_700Bold",
+    },
     image: {
         width: "100%",
         height: 350,
@@ -677,5 +946,64 @@ const styles = StyleSheet.create({
         borderRadius: 15,
         elevation: 7,
         objectFit: "cover",
+    },
+    modalContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    modalContent: {
+        backgroundColor: "white",
+        elevation: 5,
+        padding: 14,
+        width: "80%",
+        minHeight: 85,
+        justifyContent: "center",
+        alignItems: "center",
+        borderRadius: 10,
+    },
+    modalHeader: {
+        fontFamily: "Kanit_600SemiBold",
+        fontSize: 16,
+        marginBottom: 10,
+    },
+    modalCloseIcon: {
+        position: "absolute",
+        top: 10,
+        right: 10,
+    },
+    modalFooter: {
+        width: "100%",
+        alignItems: "flex-end",
+        marginTop: 14,
+    },
+    modalBtn: {
+        marginBottom: 2,
+        backgroundColor: "#5476FF",
+        width: 62,
+        height: 35,
+        borderRadius: 5,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    modalBtnText: {
+        color: "white",
+        fontFamily: "Kanit_600SemiBold",
+    },
+    modalInputContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#FFF5F5",
+        marginBottom: 5,
+        borderRadius: 10,
+        height: 50,
+        paddingHorizontal: 10,
+        width: "100%",
+    },
+    modalInput: {
+        flex: 1,
+        marginLeft: 10,
+        fontSize: 16,
+        fontFamily: "Kanit_400Regular",
     },
 });
