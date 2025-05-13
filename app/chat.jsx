@@ -179,7 +179,7 @@ export default function Chat() {
                                 ]}
                             >
                                 <Text style={styles.messageText}>
-                                    {item.deleted ? "ข้อความถูกลบ" : item.message}
+                                    {item.deleted ? "ข้อความถูกลบโดยแอดมิน" : item.message}
                                 </Text>
                             </View>
                             <Text style={styles.timeText}>{item.datetime}</Text>

@@ -133,14 +133,6 @@ export default function Report() {
                                     firestore.Timestamp.fromDate(endDate),
                             });
 
-                        // แก้ไข status ใน users
-                        await firestore()
-                            .collection("users")
-                            .doc(suspendedSelected)
-                            .update({
-                                status: false,
-                            });
-
                         getReport();
                     } catch (error) {
                         console.error("Error save suspended Data:", error);

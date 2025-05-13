@@ -9,46 +9,79 @@ import {
     Modal,
     TextInput,
     Alert,
+    RefreshControl,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import firestore from "@react-native-firebase/firestore";
 
 export default function Category() {
-    const db = firestore().collection("category");
-
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
-
+    const [refreshing, setRefreshing] = useState(false);
     const [category, setCategory] = useState([]);
     const [addInput, setAddInput] = useState("");
     const [editInput, setEditInput] = useState("");
     const [editId, setEditId] = useState(null);
 
     // ฟังก์ชันดึงข้อมูลหมวดหมู่จาก Firestore
-    const getCategoryData = (querySnapShot) => {
-        const Arr = [];
-        querySnapShot.forEach((res) => {
-            const { name, status } = res.data();
-            Arr.push({
-                id: res.id,
-                name,
-                status,
-            });
-        });
+    const getCategoryData = async () => {
+        try {
+            const querySnapshot = await firestore()
+                .collection("category")
+                .get();
 
-        setCategory(Arr);
+            const Arr = [];
+            querySnapshot.forEach((res) => {
+                const { name, status } = res.data();
+                Arr.push({
+                    id: res.id,
+                    name,
+                    status,
+                });
+            });
+
+            setCategory(Arr);
+        } catch (error) {
+            console.error("Error fetching category data:", error);
+        }
     };
 
     // ฟังก์ชันเพิ่มหมวดหมู่ใหม่
-    const addCategory = () => {
+    const addCategory = async () => {
         if (addInput !== "") {
-            db.add({
-                name: addInput,
-                status: true,
-            });
+            try {
+                // ตรวจสอบว่ามีชื่อ category นี้อยู่แล้วหรือไม่
+                const querySnapshot = await firestore()
+                    .collection("category")
+                    .where("name", "==", addInput)
+                    .get();
 
-            setAddInput("");
-            setShowAddModal(false);
+                if (!querySnapshot.empty) {
+                    // ถ้ามีชื่อซ้ำ ให้แสดงแจ้งเตือน
+                    Alert.alert("ผิดพลาด", "หมวดหมู่นี้มีอยู่แล้ว", [
+                        {
+                            text: "ตกลง",
+                        },
+                    ]);
+                } else {
+                    await firestore().collection("category").add({
+                        name: addInput,
+                        status: true,
+                    });
+
+                    setAddInput("");
+                    setShowAddModal(false);
+                    getCategoryData(); // รีเฟรชข้อมูลหลังเพิ่ม
+                }
+            } catch (error) {
+                console.error("Error adding category:", error);
+            }
+        } else {
+            Alert.alert("ผิดพลาด", "กรุณากรอกข้อมูล", [
+                {
+                    text: "ตกลง",
+                },
+            ]);
         }
     };
 
@@ -60,54 +93,98 @@ export default function Category() {
     };
 
     // ฟังก์ชันบันทึกการแก้ไขหมวดหมู่
-    const submitEdit = () => {
-        db.doc(editId).update({
-            name: editInput,
-        });
+    const submitEdit = async () => {
+        if (editInput !== "") {
+            try {
+                const querySnapshot = await firestore()
+                    .collection("category")
+                    .where("name", "==", editInput)
+                    .get();
 
-        setShowEditModal(false);
+                if (!querySnapshot.empty) {
+                    Alert.alert("ผิดพลาด", "หมวดหมู่นี้มีอยู่แล้ว", [
+                        {
+                            text: "ตกลง",
+                        },
+                    ]);
+                } else {
+                    await firestore().collection("category").doc(editId).update({
+                        name: editInput,
+                    });
+
+                    setShowEditModal(false);
+                    getCategoryData(); // รีเฟรชข้อมูลหลังแก้ไข
+                }
+            } catch (error) {
+                console.error("Error updating category:", error);
+            }
+        } else {
+            Alert.alert("ผิดพลาด", "กรุณากรอกข้อมูล", [
+                {
+                    text: "ตกลง",
+                },
+            ]);
+        }
     };
 
     // ฟังก์ชันเปิดใช้งานหมวดหมู่ที่ถูกปิดใช้งาน
-    const enableCategory = (id, name) => {
-        Alert.alert("เปิดใช้งานหมวดหมู่กิจกรรม", "ยืนยันเปิดใช้งานหมวดหมู่" + name, [
+    const enableCategory = async (id, name) => {
+        Alert.alert("เปิดใช้งานหมวดหมู่กิจกรรม", "ยืนยันเปิดใช้งานหมวดหมู่ " + name, [
             {
                 text: "ยกเลิก",
             },
             {
                 text: "ยืนยัน",
-                onPress: () =>
-                    db.doc(id).update({
-                        status: true,
-                    }),
-            },
-        ]);
-    }
-
-    // ฟังก์ชันยกเลิกใช้งานหมวดหมู่
-    const cancelCategory = (id, name) => {
-        Alert.alert("", "ยืนยันยกเลิกใช้งานหมวดหมู่" + name, [
-            {
-                text: "ยกเลิก",
-            },
-            {
-                text: "ยืนยัน",
-                onPress: () =>
-                    db.doc(id).update({
-                        status: false,
-                    }),
+                onPress: async () => {
+                    try {
+                        await firestore().collection("category").doc(id).update({
+                            status: true,
+                        });
+                        await getCategoryData(); // รีเฟรชข้อมูลหลังเปลี่ยนสถานะ
+                    } catch (error) {
+                        console.error("Error enabling category:", error);
+                    }
+                },
             },
         ]);
     };
 
-    // ดึงข้อมูลหมวดหมู่จาก Firestore ทุกครั้งที่มีการเปลี่ยนแปลง
+    // ฟังก์ชันยกเลิกใช้งานหมวดหมู่
+    const cancelCategory = async (id, name) => {
+        Alert.alert("แจ้งเตือน", "ยืนยันยกเลิกใช้งานหมวดหมู่ " + name, [
+            {
+                text: "ยกเลิก",
+            },
+            {
+                text: "ยืนยัน",
+                onPress: async () => {
+                    try {
+                        await firestore().collection("category").doc(id).update({
+                            status: false,
+                        });
+                        await getCategoryData(); // รีเฟรชข้อมูลหลังเปลี่ยนสถานะ
+                    } catch (error) {
+                        console.error("Error disabling category:", error);
+                    }
+                },
+            },
+        ]);
+    };
+
+    const onRefresh = () => {
+        setRefreshing(true);
+        getCategoryData();
+        setRefreshing(false);
+    };
+
+    // ดึงข้อมูลหมวดหมู่จาก Firestore เมื่อ component mount
     useEffect(() => {
-        db.onSnapshot(getCategoryData);
+        getCategoryData();
     }, []);
 
     return (
         <SafeAreaView style={styles.container}>
-             {/* ปุ่มเพิ่มหมวดหมู่กิจกรรม */}
+            {/* ปุ่มเพิ่มหมวดหมู่กิจกรรม */}
             <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={() => setShowAddModal(true)}
@@ -122,7 +199,13 @@ export default function Category() {
             <FlatList
                 data={category}
                 keyExtractor={(item) => item.id}
-                contentContainerStyle={{ padding: 3}}
+                contentContainerStyle={{ padding: 3 }}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                    />
+                }
                 renderItem={({ item }) => (
                     <View style={styles.listContainer}>
                         <View style={styles.listContent}>
@@ -132,7 +215,6 @@ export default function Category() {
                                 </Text>
                             </View>
                             <View style={styles.buttonContainer}>
-                                
                                 {/* ปุ่มแก้ไข */}
                                 <TouchableOpacity
                                     activeOpacity={0.8}
@@ -388,4 +470,4 @@ const styles = StyleSheet.create({
         color: "white",
         fontFamily: "Kanit_600SemiBold"
     }
-})
+});

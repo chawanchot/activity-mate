@@ -146,8 +146,6 @@ const styles = StyleSheet.create({
     },
     userContainer: {
         flexDirection: "row",
-        borderBottomWidth: 1,
-        borderBottomColor: "#CCCCCC",
         paddingVertical: 10,
         alignItems: "center",
         gap: 10,
@@ -157,9 +155,7 @@ const styles = StyleSheet.create({
         fontFamily: "Kanit_600SemiBold",
     },
     dateContainer: {
-        paddingVertical: 5,
-        borderBottomWidth: 1,
-        borderBottomColor: "#CCCCCC",
+        paddingVertical: 2,
     },
     dateList: {
         flexDirection: "row",
@@ -178,8 +174,8 @@ const styles = StyleSheet.create({
         paddingVertical: 5,
     },
     profileImage: {
-        width: 60, 
-        height: 60, 
+        width: 50, 
+        height: 50, 
         objectFit: "cover", 
         borderRadius: 10, 
         elevation: 5,

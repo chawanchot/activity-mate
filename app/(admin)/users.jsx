@@ -29,15 +29,49 @@ export default function Users() {
     const getUsers = async () => {
         try {
             const getData = await firestore().collection("users").get();
-            const users = getData.docs.map(doc => {
-                return {
-                    ...doc.data(),
-                    id: doc.id
+            const users = [];
+
+            // วนลูปผ่านเอกสารด้วย for...of
+            for (const doc of getData.docs) {
+                // ค้นหาข้อมูล suspended
+                const suspendedQuery = await firestore()
+                    .collection("suspended")
+                    .where("userID", "==", doc.id)
+                    .orderBy("suspendedEnd", "desc")
+                    .limit(1)
+                    .get();
+
+                let isSuspended = false;
+
+                // ตรวจสอบว่ามีเอกสาร suspended หรือไม่
+                if (!suspendedQuery.empty) {
+                    const suspendedData = suspendedQuery.docs[0].data()
+
+                    const suspendedEndDate = suspendedData.suspendedEnd.toDate();
+                    const currentDate = new Date();
+
+                    if (currentDate <= suspendedEndDate) {
+                        isSuspended = true;
+                    }
+
+                    isSuspended = true;
                 }
-            });
-            
-            const filltered = users.filter(item => item.username.toLowerCase().includes(search.toLocaleLowerCase()))
-            setUsersData(filltered);
+
+                // เพิ่มข้อมูลผู้ใช้ลงใน array
+                users.push({
+                    ...doc.data(),
+                    id: doc.id,
+                    isSuspended: isSuspended,
+                });
+            }
+
+            // กรองข้อมูลตาม search
+            const filtered = users.filter((item) =>
+                item.username.toLowerCase().includes(search.toLowerCase())
+            );
+
+            // อัปเดต state
+            setUsersData(filtered);
         } catch (error) {
             console.log("fetch Data error: ", error);
         }
@@ -90,11 +124,6 @@ export default function Users() {
                     suspendedEnd: firestore.Timestamp.fromDate(endDate),
                 })
 
-                // แก้ไข status ใน users
-                await firestore().collection("users").doc(suspendedSelected).update({
-                    status: false
-                })
-
                 setSuspendedSelected(null);
                 setSuspendedDate("");
                 setSuspendedReason("");
@@ -133,11 +162,6 @@ export default function Users() {
             
                         // ดำเนินการ Batch
                         await batch.commit();
-                        
-                        // แก้ไข status ใน users
-                        await firestore().collection("users").doc(id).update({
-                            status: true
-                        })
 
                         getUsers();
                     } catch (error) {
@@ -215,10 +239,10 @@ export default function Users() {
                                     </View>
                                     <View style={{ alignItems: "center" }}>
                                         <Text style={styles.headerText}>สถานะบัญชี</Text>
-                                        {item.status ? (
-                                            <Text style={[styles.badge, { backgroundColor: "#008CFF" }]}>ไม่ถูกระงับ</Text>
-                                        ) : (
+                                        {item.isSuspended ? (
                                             <Text style={[styles.badge, { backgroundColor: "#FF4400" }]}>ถูกระงับ</Text>
+                                        ) : (
+                                            <Text style={[styles.badge, { backgroundColor: "#008CFF" }]}>ไม่ถูกระงับ</Text>
                                         )}
                                     </View>
                                 </View>
@@ -238,11 +262,11 @@ export default function Users() {
                                     activeOpacity={0.8}
                                     style={[styles.btn,{ backgroundColor: "#FFC300" }]}
                                     onPress={() => {
-                                        item.status ? openSuspendedModal(item.id) : cancelSuspended(item.id)
+                                        item.isSuspended ? cancelSuspended(item.id) : openSuspendedModal(item.id)
                                     }}
                                 >
                                     <Text style={styles.btnText}>
-                                        {item.status ? "ระงับบัญชี" : "ยกเลิกระงับบัญชี"}
+                                        {item.isSuspended ? "ยกเลิกระงับบัญชี" : "ระงับบัญชี"}
                                     </Text>
                                 </TouchableOpacity>
                             </View>

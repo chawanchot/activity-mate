@@ -31,6 +31,7 @@ export default function ActivityDetail() {
     const [rating, setRating] = useState("");
     const [comment, setComment] = useState("");
     const [showReviewBtn, setShowReviewBtn] = useState(true);
+    const [averageOwnerRating, setAverageOwnerRating] = useState(null);
 
     const formatDateTime = (data) => {
         if (!data) return ""; // ตรวจสอบว่ามีข้อมูลก่อน
@@ -52,85 +53,127 @@ export default function ActivityDetail() {
         return formattedStartDate;
     };
 
-    const getActivityData = () => {
-        firestore()
-            .collection("activities")
-            .doc(params.id)
-            .onSnapshot(async (snapshot) => {
-                if (!snapshot.exists) return; // ถ้าไม่มีข้อมูลให้หยุดการทำงาน
+    const getActivityData = async () => {
+        try {
+            const activitySnapshot = await firestore()
+                .collection("activities")
+                .doc(params.id)
+                .get();
 
-                const activityData = snapshot.data();
+            if (!activitySnapshot.exists) {
+                console.log("Activity not found");
+                return; // ถ้าไม่มีข้อมูลให้หยุดการทำงาน
+            }
 
-                const fetchOwner = await firestore()
-                    .collection("users")
-                    .doc(activityData.createdByUserID)
-                    .get();
+            const activityData = activitySnapshot.data();
 
-                const ownerData = fetchOwner.data();
+            // ดึงข้อมูล owner
+            const fetchOwner = await firestore()
+                .collection("users")
+                .doc(activityData.createdByUserID)
+                .get();
 
-                const fetchRegistrations = await firestore()
-                    .collection("registrations")
-                    .where("activityID", "==", params.id)
-                    .get();
+            const ownerData = fetchOwner.exists ? fetchOwner.data() : {};
 
-                const RegistrationsData = [];
+            // คำนวณค่าเฉลี่ย rating ของผู้จัด (createdByUserID)
+            let averageRating = 0;
+            let totalReviews = 0;
+            let totalRating = 0;
 
-                for (const doc of fetchRegistrations.docs) {
-                    const data = doc.data();
+            // ดึง reviews สำหรับทุกกิจกรรมที่ผู้ใช้คนนี้จัด
 
-                    if (data.userID === user.uid) {
-                        setRegisted(true);
-                    } else {
-                        setRegisted(false);
-                    }
+            const reviewsSnapshot = await firestore()
+                .collection("reviews")
+                .where("userID", "==", fetchOwner.id)
+                .get();
 
-                    // ดึง category จาก categoryID
-                    const getUserData = await firestore()
-                        .collection("users")
-                        .doc(data.userID)
-                        .get();
-
-                    const userData = getUserData.data();
-
-                    RegistrationsData.push({
-                        id: data.userID,
-                        username: userData.username,
-                        profilePicture: userData.profilePicture,
-                    });
-                }
-
-                const fetchReviews = await firestore()
-                    .collection("reviews")
-                    .where("activityID", "==", params.id)
-                    .get();
-
-                const ReviewsData = [];
-
-                for (const doc of fetchReviews.docs) {
-                    const data = doc.data();
-
-                    if (data.userID === user.uid) {
-                        setShowReviewBtn(false);
-                    }
-
-                    ReviewsData.push({
-                        id: doc.id,
-                        rating: data.rating,
-                        comment: data.comment,
-                    });
-                }
-
-                setActivity({
-                    ...activityData,
-                    owner: ownerData,
-                    registrations: RegistrationsData,
-                    reviews: ReviewsData,
+            if (!reviewsSnapshot.empty) {
+                reviewsSnapshot.forEach(doc => {
+                    const reviewData = doc.data();
+                    totalRating += reviewData.rating; // รวม rating ทั้งหมด
+                    totalReviews += 1; // นับจำนวนรีวิว
                 });
+            }
+
+            // คำนวณค่าเฉลี่ย
+            if (totalReviews > 0) {
+                averageRating = (totalRating / totalReviews).toFixed(1);
+            }
+
+            // ดึงข้อมูล registrations
+            const fetchRegistrations = await firestore()
+                .collection("registrations")
+                .where("activityID", "==", params.id)
+                .get();
+
+            const RegistrationsData = [];
+            let isRegistered = false;
+
+            for (const doc of fetchRegistrations.docs) {
+                const data = doc.data();
+
+                if (data.userID === user.uid) {
+                    isRegistered = true;
+                }
+
+                // ดึงข้อมูล user จาก userID
+                const getUserData = await firestore()
+                    .collection("users")
+                    .doc(data.userID)
+                    .get();
+
+                const userData = getUserData.exists ? getUserData.data() : {};
+
+                RegistrationsData.push({
+                    id: data.userID,
+                    username: userData.username || "Unknown",
+                    profilePicture: userData.profilePicture || "",
+                });
+            }
+
+            // ดึงข้อมูล reviews
+            const fetchReviews = await firestore()
+                .collection("reviews")
+                .where("activityID", "==", params.id)
+                .get();
+
+            const ReviewsData = [];
+            let hasReviewed = false;
+
+            for (const doc of fetchReviews.docs) {
+                const data = doc.data();
+
+                if (data.reviewBy === user.uid) {
+                    hasReviewed = true;
+                }
+
+                ReviewsData.push({
+                    id: doc.id,
+                    rating: data.rating,
+                    comment: data.comment,
+                });
+            }
+
+            // อัปเดต state
+            setActivity({
+                ...activityData,
+                owner: {
+                    ...ownerData,
+                    id: fetchOwner.id,
+                },
+                registrations: RegistrationsData,
+                reviews: ReviewsData,
             });
+            setRegisted(isRegistered);
+            setShowReviewBtn(!hasReviewed);
+            setAverageOwnerRating(averageRating);
+        } catch (error) {
+            console.error("Error fetching activity data:", error);
+        }
     };
 
     const cancelActivity = async () => {
-        Alert.alert("", "ยืนยันยกเลิกกิจกรรม", [
+        Alert.alert("แจ้งเตือน", "ยืนยันยกเลิกกิจกรรม", [
             {
                 text: "ยกเลิก",
             },
@@ -159,8 +202,34 @@ export default function ActivityDetail() {
         ]);
     };
 
+    const allowActivity = async () => {
+        Alert.alert("แจ้งเตือน", "ยืนยันเปิดกิจกรรม", [
+            {
+                text: "ยกเลิก",
+            },
+            {
+                text: "ยืนยัน",
+                onPress: () =>
+                    firestore()
+                        .collection("activities")
+                        .doc(params.id)
+                        .update({ status: "ongoing" })
+                        .then(() => {
+                            getActivityData();
+                        })
+                        .catch((error) => {
+                            console.error("Error update cancel status:", error);
+                            Alert.alert(
+                                "เกิดข้อผิดพลาด",
+                                "ไม่สามารถเปิดกิจกรรมได้ กรุณาลองใหม่อีกครั้ง"
+                            );
+                        }),
+            },
+        ]);
+    };
+
     const endActivity = async () => {
-        Alert.alert("", "ยืนยันสิ้นสุดกิจกรรม", [
+        Alert.alert("แจ้งเตือน", "ยืนยันสิ้นสุดกิจกรรม", [
             {
                 text: "ยกเลิก",
             },
@@ -230,7 +299,8 @@ export default function ActivityDetail() {
             firestore()
             .collection("reviews")
             .add({
-                userID: user.uid,
+                userID: activity.owner.id,
+                reviewBy: user.uid,
                 rating: rating,
                 comment: comment,
                 activityID: params.id, 
@@ -370,10 +440,24 @@ export default function ActivityDetail() {
                                 source={{ uri: activity.owner.profilePicture }}
                                 style={styles.ownerImage}
                             />
-                            <View style={{ marginLeft: 12 }}>
-                                <Text style={styles.ownerName}>
-                                    {activity.owner.username}
-                                </Text>
+                            <View>
+                                <View style={{ marginLeft: 12 }}>
+                                    <Text style={styles.ownerName}>
+                                        {activity.owner.username}
+                                    </Text>
+                                </View>
+                                {averageOwnerRating > 0 && (
+                                    <View style={[styles.reviewsRating, { marginLeft: 12 }]}>
+                                        <FontAwesome
+                                            name="star"
+                                            size={16}
+                                            color="#FFD700"
+                                        />
+                                        <Text style={styles.ratingText}>
+                                            {averageOwnerRating}
+                                        </Text>
+                                    </View>
+                                )}
                             </View>
                         </View>
 
@@ -450,9 +534,20 @@ export default function ActivityDetail() {
                                 </TouchableOpacity>
                             ) : (
                                 // ข้อความยกเลิกกิจกรรม
-                                <Text style={styles.cancelText}>
-                                    กิจกรรมถูกยกเลิก
-                                </Text>
+                                <View>
+                                    <Text style={styles.cancelText}>
+                                        กิจกรรมถูกยกเลิก
+                                    </Text>
+                                    <TouchableOpacity
+                                        activeOpacity={0.8}
+                                        onPress={allowActivity}
+                                        style={styles.allowButton}
+                                    >
+                                        <Text style={styles.buttonText}>
+                                            เปิดกิจกรรม
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
                             )}
                         </View>
                     )}
@@ -861,6 +956,12 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         paddingVertical: 12,
         backgroundColor: "#EF4444",
+    },
+    allowButton: {
+        flex: 1,
+        borderRadius: 8,
+        paddingVertical: 12,
+        backgroundColor: "#3B82F6",
     },
     buttonText: {
         textAlign: "center",

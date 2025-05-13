@@ -40,7 +40,7 @@ export default function ManageActivity() {
 
             let query = firestore()
                 .collection("activities")
-                .where("status", "==", "ongoing")
+                .where("status", "in", ["ongoing", "cancel"])
                 .where("startDate", ">", currentDate)
                 .orderBy("startDate", "asc");
 
@@ -113,6 +113,7 @@ export default function ManageActivity() {
                         provice: data.provice,
                         startDate: formattedDate,
                         registrations: allRegistrationsData.length,
+                        status: data.status,
                     });
                 }
             }
@@ -288,6 +289,13 @@ export default function ManageActivity() {
                                 }
                             >
                                 <View style={styles.listContainer}>
+                                    {/* ข้อความกิจกรรมถูกยกเลิก */}
+                                    {item.status === "cancel" && (
+                                        <View style={styles.overlay}>
+                                            <Text style={styles.cancelText}>กิจกรรมถูกยกเลิก</Text>
+                                        </View>
+                                    )}
+
                                     {/* Header: จำนวนผู้เข้าร่วม */}
                                     <View
                                         style={{
@@ -472,5 +480,18 @@ const styles = StyleSheet.create({
         fontFamily: "Kanit_600SemiBold",
         fontSize: 18,
         color: "white",
+    },
+    overlay: {
+        ...StyleSheet.absoluteFillObject, // ทำให้ครอบคลุมพื้นที่ทั้งหมด
+        backgroundColor: "rgba(60, 60, 60, 0.8)",
+        justifyContent: "center",
+        alignItems: "center",
+        zIndex: 10,
+        borderRadius: 10,
+    },
+    cancelText: {
+        color: "white",
+        fontSize: 24,
+        fontFamily: "Kanit_600SemiBold",
     },
 });

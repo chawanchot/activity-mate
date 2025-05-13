@@ -17,63 +17,23 @@ export const AuthProvider = ({ children }) => {
 
             if (data) {
                 try {
-                    // ตรวจสอบข้อมูลใน suspended
-                    const suspendedDocRef = firestore().collection("suspended").doc(data.uid);
-                    const suspendedDoc = await suspendedDocRef.get();
-
-                    let isSuspended = false;
-                    let suspendEndDate = null;
-
-                    if (suspendedDoc.exists) {
-                        const suspendedData = suspendedDoc.data();
-                        suspendEndDate = new Date(suspendedData.suspendEnd);
-                        const currentDate = new Date();
-
-                        if (currentDate > suspendEndDate) {
-                            // ถ้าเลยวันที่ระงับแล้ว
-                            await firestore()
-                                .collection("users")
-                                .doc(data.uid)
-                                .set({ status: true }, { merge: true }); // อัปเดต status เป็น true
-                        } else {
-                            // ถ้ายังไม่เลยวันที่ระงับ
-                            isSuspended = true;
-                        }
-                    }
-
                     // ฟังข้อมูลผู้ใช้แบบเรียลไทม์
-                    const unsubscribe = firestore()
+                    const userUnsubscribe = firestore()
                         .collection("users")
                         .doc(data.uid)
                         .onSnapshot(
                             async (doc) => {
                                 if (doc.exists) {
-                                    const userData = { uid: data.uid, ...doc.data()}
+                                    const userData = { uid: data.uid, ...doc.data() };
                                     setUser(userData);
                                     setLoggedIn(true);
-
-                                    // ตรวจสอบสถานะและการระงับ
-                                    if (isSuspended || !userData.status) {
-                                        await auth().signOut();
-                                        setUser(null);
-                                        setLoggedIn(false);
-                                        router.replace("/login");
-
-                                        Alert.alert(
-                                            "บัญชีถูกระงับ",
-                                            `บัญชีของคุณถูกระงับจนถึง ${suspendEndDate.toLocaleString()}`,
-                                            [
-                                                { text: "ตกลง" },
-                                            ]
-                                        );
-                                    }
                                 } else {
+                                    // สร้างผู้ใช้ใหม่ถ้าไม่มีใน Firestore
                                     const newUser = {
                                         username: data.displayName || "Unknown User",
                                         email: data.email,
                                         profilePicture: data.photoURL || "",
                                         role: "member",
-                                        status: true,
                                     };
 
                                     await firestore()
@@ -92,9 +52,58 @@ export const AuthProvider = ({ children }) => {
                             }
                         );
 
-                    return () => unsubscribe();
+                    // ฟังสถานะ suspended แบบเรียลไทม์
+                    const suspendedUnsubscribe = firestore()
+                        .collection("suspended")
+                        .where("userID", "==", data.uid)
+                        .orderBy("suspendedEnd", "desc")
+                        .limit(1)
+                        .onSnapshot(
+                            async (snapshot) => {
+                                let isSuspended = false;
+                                let suspendEndDate = null;
+                                let reason = "";
+
+                                if (!snapshot.empty) {
+                                    const suspendedData = snapshot.docs[0].data();
+                                    suspendEndDate = suspendedData.suspendedEnd.toDate(); // แปลง Timestamp เป็น Date
+                                    const currentDate = new Date();
+
+                                    if (currentDate <= suspendEndDate) {
+                                        // ถ้ายังอยู่ในช่วงระงับ
+                                        isSuspended = true;
+                                        reason = suspendedData.reason;
+                                    }
+                                }
+
+                                // ถ้าถูกระงับ ให้ออกจากระบบทันที
+                                if (isSuspended) {
+                                    await auth().signOut();
+                                    setUser(null);
+                                    setLoggedIn(false);
+                                    setIsLoading(false);
+                                    router.replace("/login");
+
+                                    Alert.alert(
+                                        "บัญชีถูกระงับ",
+                                        `บัญชีของคุณถูกระงับจนถึง ${suspendEndDate.toLocaleString()} เหตุผล: ${reason}`,
+                                        [{ text: "ตกลง" }]
+                                    );
+                                }
+                            },
+                            (error) => {
+                                console.error("Error fetching suspended data:", error);
+                                setIsLoading(false);
+                            }
+                        );
+
+                    // คืนฟังก์ชัน cleanup สำหรับทั้งสอง listener
+                    return () => {
+                        userUnsubscribe();
+                        suspendedUnsubscribe();
+                    };
                 } catch (error) {
-                    console.error("Error setting up user listener:", error);
+                    console.error("Error setting up listeners:", error);
                     setIsLoading(false);
                 }
             } else {

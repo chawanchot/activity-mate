@@ -63,6 +63,7 @@ export default function Login() {
 
             let isSuspended = false;
             let suspendedEndDate = null;
+            let reason = "";
 
             if (!suspendedDoc.empty) {
                 const suspendedData = suspendedDoc.docs[0].data(); // ดึงเอกสารแรก
@@ -70,19 +71,21 @@ export default function Login() {
                     suspendedEndDate = suspendedData.suspendedEnd.toDate();
                     const currentDate = new Date();
                     if (currentDate > suspendedEndDate) {
-                        await userDocRef.set({ status: true }, { merge: true }); // เพิ่ม merge เพื่อไม่ให้เขียนทับข้อมูลอื่น
+                        // await userDocRef.set({ status: true }, { merge: true }); // เพิ่ม merge เพื่อไม่ให้เขียนทับข้อมูลอื่น
                     } else {
                         isSuspended = true;
+                        reason = suspendedData.reason;
                     }
                 }
             }
 
-            if (isSuspended || (userDoc.exists && !userDoc.data().status)) {
+            // if (isSuspended || (userDoc.exists && !userDoc.data().status)) {
+            if (isSuspended) {
                 auth().signOut();
                 Alert.alert(
                     "บัญชีถูกระงับ",
                     suspendedEndDate
-                        ? `บัญชีของคุณถูกระงับจนถึง ${suspendedEndDate.toLocaleString()}`
+                        ? `บัญชีของคุณถูกระงับจนถึง ${suspendedEndDate.toLocaleString()} เหตุผล: ${reason}`
                         : "บัญชีของคุณถูกระงับ กรุณาติดต่อผู้ดูแลระบบ",
                     [{ text: "ตกลง" }]
                 );
@@ -143,6 +146,7 @@ export default function Login() {
 
             let isSuspended = false;
             let suspendedEndDate = null;
+            let reason = "";
 
             if (!suspendedDoc.empty) {
                 const suspendedData = suspendedDoc.docs[0].data(); // ดึงเอกสารแรก
@@ -150,19 +154,21 @@ export default function Login() {
                     suspendedEndDate = suspendedData.suspendedEnd.toDate();
                     const currentDate = new Date();
                     if (currentDate > suspendedEndDate) {
-                        await userDocRef.set({ status: true }, { merge: true }); // เพิ่ม merge เพื่อไม่ให้เขียนทับข้อมูลอื่น
+                        // await userDocRef.set({ status: true }, { merge: true }); // เพิ่ม merge เพื่อไม่ให้เขียนทับข้อมูลอื่น
                     } else {
                         isSuspended = true;
+                        reason = suspendedData.reason;
                     }
                 }
             }
 
-            if (isSuspended || (userDoc.exists && !userDoc.data().status)) {
+            // if (isSuspended || (userDoc.exists && !userDoc.data().status)) {
+            if (isSuspended) {
                 await auth().signOut();
                 Alert.alert(
                     "บัญชีถูกระงับ",
                     suspendedEndDate
-                        ? `บัญชีของคุณถูกระงับจนถึง ${suspendedEndDate.toLocaleString()}`
+                        ? `บัญชีของคุณถูกระงับจนถึง ${suspendedEndDate.toLocaleString()} เหตุผล: ${reason}`
                         : "บัญชีของคุณถูกระงับ กรุณาติดต่อผู้ดูแลระบบ",
                     [{ text: "ตกลง" }]
                 );
