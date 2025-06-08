@@ -35,6 +35,8 @@ export default function Login() {
 
     // ฟังก์ชันเข้าสู่ระบบด้วย Google
     const signInGoogle = async () => {
+        await GoogleSignin.signOut(); // บังคับให้เลือกบัญชีใหม่ทุกครั้ง
+
         try {
             await GoogleSignin.hasPlayServices({
                 showPlayServicesUpdateDialog: true,
