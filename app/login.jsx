@@ -79,11 +79,16 @@ export default function Login() {
                         reason = suspendedData.reason;
                     }
                 }
+            } else {
+                isSuspended = false;
             }
 
             // if (isSuspended || (userDoc.exists && !userDoc.data().status)) {
             if (isSuspended) {
                 auth().signOut();
+
+                console.log("TEST SUSPENDED 3")
+
                 Alert.alert(
                     "บัญชีถูกระงับ",
                     suspendedEndDate
@@ -162,11 +167,16 @@ export default function Login() {
                         reason = suspendedData.reason;
                     }
                 }
+            } else {
+                isSuspended = false;
             }
 
             // if (isSuspended || (userDoc.exists && !userDoc.data().status)) {
             if (isSuspended) {
                 await auth().signOut();
+
+                console.log("TEST SUSPENDED 2")
+
                 Alert.alert(
                     "บัญชีถูกระงับ",
                     suspendedEndDate
@@ -177,7 +187,15 @@ export default function Login() {
                 return;
             }
         } catch (error) {
-            console.log("Facebook Sign-In Error:", error);
+            if (error.code === "auth/account-exists-with-different-credential") {
+                Alert.alert(
+                    "แจ้งเตือน",
+                    "อีเมลนี้เคยเข้าสู่ระบบไว้แล้วด้วยวิธีอื่น กรุณาเข้าสู่ระบบด้วยวิธีเดิม เช่น Google",
+                    [{ text: "ตกลง" }]
+                );
+            } else {
+                console.log("Facebook Sign-In Error:", error);
+            }
         }
     };
 

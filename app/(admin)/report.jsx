@@ -89,6 +89,8 @@ export default function Report() {
                 })
             );
 
+            reports.sort((a, b) => new Date(b.createdAt.toDate()) - new Date(a.createdAt.toDate()));
+
             setReportsData(reports);
         } catch (error) {
             console.log("fetch Data error: ", error);

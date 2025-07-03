@@ -7,12 +7,16 @@ import {
     FlatList,
     RefreshControl,
     Image,
+    TextInput,
+    TouchableOpacity,
 } from "react-native";
 import firestore from "@react-native-firebase/firestore";
+import { MaterialIcons } from "@expo/vector-icons";
 
 export default function Suspended() {
     const [refreshing, setRefreshing] = useState(false);
     const [suspendedData, setSuspendedData] = useState([]);
+    const [search, setSearch] = useState("");
 
     const formatDateTime = (data) => {
         const datetime = data.toDate();
@@ -26,7 +30,7 @@ export default function Suspended() {
         });
 
         return formatted;
-    }
+    };
 
     const getSuspended = async () => {
         try {
@@ -37,10 +41,15 @@ export default function Suspended() {
                 getData.docs.map(async (doc) => {
                     let suspendedData = doc.data();
 
-                    const userDoc = await firestore().collection("users").doc(suspendedData.userID).get();
+                    const userDoc = await firestore()
+                        .collection("users")
+                        .doc(suspendedData.userID)
+                        .get();
                     const userData = userDoc.data();
 
-                    const startDate = formatDateTime(suspendedData.suspendedStart);
+                    const startDate = formatDateTime(
+                        suspendedData.suspendedStart
+                    );
                     const endDate = formatDateTime(suspendedData.suspendedEnd);
 
                     return {
@@ -54,7 +63,16 @@ export default function Suspended() {
                 })
             );
 
-            setSuspendedData(suspendeds);
+            // เรียงตาม startDate ล่าสุดขึ้นก่อน
+            suspendeds.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+
+            // กรองข้อมูลตาม search
+            const filtered = suspendeds.filter((item) =>
+                item.username.toLowerCase().includes(search.toLowerCase())
+            );
+
+            // อัปเดต state
+            setSuspendedData(filtered);
         } catch (error) {
             console.log("fetch Data error: ", error);
         }
@@ -72,6 +90,25 @@ export default function Suspended() {
 
     return (
         <SafeAreaView style={styles.container}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View style={styles.inputContainer}>
+                    <MaterialIcons name="search" size={24} color="#A6A6A6" />
+                    <TextInput
+                        placeholder="ค้นหา"
+                        style={styles.input}
+                        value={search}
+                        onChangeText={setSearch}
+                    />
+                </View>
+                <TouchableOpacity
+                    activeOpacity={0.8}
+                    style={styles.searchBtn}
+                    onPress={getSuspended}
+                >
+                    <Text style={styles.searchBtnText}>ค้นหา</Text>
+                </TouchableOpacity>
+            </View>
+
             {/* แสดงรายการหมวดหมู่ทั้งหมด */}
             <FlatList
                 data={suspendedData}
@@ -88,11 +125,13 @@ export default function Suspended() {
                         <View style={styles.listContent}>
                             {/* ผู้รายงานและผู้ถูกรายงาน */}
                             <View style={styles.userContainer}>
-                                <Image 
-                                    source={{ uri: item.profilePicture }} 
+                                <Image
+                                    source={{ uri: item.profilePicture }}
                                     style={styles.profileImage}
                                 />
-                                <Text style={styles.username}>{item.username}</Text>
+                                <Text style={styles.username}>
+                                    {item.username}
+                                </Text>
                             </View>
 
                             {/* วันที่ */}
@@ -117,7 +156,9 @@ export default function Suspended() {
 
                             {/* เหตุผลการระงับ */}
                             <View style={styles.reasonContainer}>
-                                <Text style={styles.headerText}>เหตุผลการระงับ</Text>
+                                <Text style={styles.headerText}>
+                                    เหตุผลการระงับ
+                                </Text>
                                 <Text style={styles.text}>{item.reason}</Text>
                             </View>
                         </View>
@@ -133,6 +174,35 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: "white",
         padding: 6,
+    },
+    inputContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#FFF5F5",
+        marginBottom: 5,
+        borderRadius: 10,
+        height: 50,
+        paddingHorizontal: 10,
+        width: "80%",
+    },
+    input: {
+        flex: 1,
+        marginLeft: 10,
+        fontSize: 20,
+        fontFamily: "Kanit_400Regular",
+    },
+    searchBtn: {
+        backgroundColor: "#5C77FE",
+        justifyContent: "center",
+        width: "20%",
+        alignItems: "center",
+        borderRadius: 8,
+        height: 50,
+    },
+    searchBtnText: {
+        color: "white",
+        fontFamily: "Kanit_400Regular",
+        fontSize: 16,
     },
     listContainer: {
         backgroundColor: "white",
@@ -174,10 +244,10 @@ const styles = StyleSheet.create({
         paddingVertical: 5,
     },
     profileImage: {
-        width: 50, 
-        height: 50, 
-        objectFit: "cover", 
-        borderRadius: 10, 
+        width: 50,
+        height: 50,
+        objectFit: "cover",
+        borderRadius: 10,
         elevation: 5,
     },
 });

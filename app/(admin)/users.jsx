@@ -139,7 +139,7 @@ export default function Users() {
     }
 
     const cancelSuspended = async (id) => {
-        Alert.alert("ยืนยัน", "ยกเลิกการระงับบัญชี", [
+        Alert.alert("แจ้งเตือน", "ยืนยันการยกเลิกระงับบัญชี", [
             {
                 text: "ยกเลิก",
             },

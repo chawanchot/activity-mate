@@ -144,6 +144,9 @@ export default function MemberSeachActivity() {
                         ...doc.data(),
                     }));
 
+                    // เรียงตามตัวอักษร
+                    dataCategory.sort((a, b) => a.name.localeCompare(b.name));
+
                     setCategories(dataCategory);
                 },
                 (error) => {

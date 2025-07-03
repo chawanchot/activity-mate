@@ -1,13 +1,13 @@
-import { 
-    StyleSheet, 
-    View, 
-    Text, 
-    Image, 
-    TouchableOpacity, 
-    FlatList, 
-    Alert, 
+import {
+    StyleSheet,
+    View,
+    Text,
+    Image,
+    TouchableOpacity,
+    FlatList,
+    Alert,
     ActivityIndicator,
-    RefreshControl
+    RefreshControl,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -104,9 +104,36 @@ export default function MemberHome() {
                 });
             }
 
-            setActivityList(dataActivity);
+            const ongoingActivities = dataActivity.filter(
+                (a) => a.status !== "success"
+            );
+            const endedActivities = dataActivity.filter(
+                (a) => a.status === "success"
+            );
+
+            const mergedList = [];
+
+            if (ongoingActivities.length > 0) {
+                mergedList.push({
+                    type: "header",
+                    title: "กำลังดำเนินการ",
+                    key: "ongoing",
+                });
+                mergedList.push(...ongoingActivities);
+            }
+
+            if (endedActivities.length > 0) {
+                mergedList.push({
+                    type: "header",
+                    title: "สิ้นสุด",
+                    key: "ended",
+                });
+                mergedList.push(...endedActivities);
+            }
+
+            setActivityList(mergedList);
         } catch (error) {
-            console.log("fetch Data error: ", error)
+            console.log("fetch Data error: ", error);
         }
         setIsLoading(false);
     };
@@ -127,7 +154,7 @@ export default function MemberHome() {
                 const getActivityData = await firestore()
                     .collection("activities")
                     .doc(data.activityID)
-                    .get()
+                    .get();
 
                 const activityData = getActivityData.data();
 
@@ -178,9 +205,36 @@ export default function MemberHome() {
                 });
             }
 
-            setActivityList(dataActivity);
+            const ongoingActivities = dataActivity.filter(
+                (a) => a.status !== "success"
+            );
+            const endedActivities = dataActivity.filter(
+                (a) => a.status === "success"
+            );
+
+            const mergedList = [];
+
+            if (ongoingActivities.length > 0) {
+                mergedList.push({
+                    type: "header",
+                    title: "กำลังดำเนินการ",
+                    key: "ongoing",
+                });
+                mergedList.push(...ongoingActivities);
+            }
+
+            if (endedActivities.length > 0) {
+                mergedList.push({
+                    type: "header",
+                    title: "สิ้นสุด",
+                    key: "ended",
+                });
+                mergedList.push(...endedActivities);
+            }
+
+            setActivityList(mergedList);
         } catch (error) {
-            console.log("fetch Data error: ", error)
+            console.log("fetch Data error: ", error);
         }
         setIsLoading(false);
     };
@@ -232,12 +286,18 @@ export default function MemberHome() {
                         <Text style={styles.username}>{user.username}</Text>
                         <View style={styles.buttonContainer}>
                             {/* ปุ่มแก้ไขข้อมูล */}
-                            <TouchableOpacity onPress={() => router.push("/editProfile")}>
-                                <Text style={styles.profileEditBtn}>แก้ไขข้อมูล</Text>
+                            <TouchableOpacity
+                                onPress={() => router.push("/editProfile")}
+                            >
+                                <Text style={styles.profileEditBtn}>
+                                    แก้ไขข้อมูล
+                                </Text>
                             </TouchableOpacity>
                             {/* ปุ่มออกจากระบบ */}
                             <TouchableOpacity onPress={logout}>
-                                <Text style={styles.profileLogoutBtn}>ออกจากระบบ</Text>
+                                <Text style={styles.profileLogoutBtn}>
+                                    ออกจากระบบ
+                                </Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -249,15 +309,28 @@ export default function MemberHome() {
                         onPress={() => setTab("join")}
                         style={[styles.tab, tab === "join" && styles.activeTab]}
                     >
-                        <Text style={[styles.tabText, tab === "join" && styles.activeTabText]}>
+                        <Text
+                            style={[
+                                styles.tabText,
+                                tab === "join" && styles.activeTabText,
+                            ]}
+                        >
                             การเข้าร่วม
                         </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         onPress={() => setTab("owner")}
-                        style={[styles.tab, tab === "owner" && styles.activeTab]}
+                        style={[
+                            styles.tab,
+                            tab === "owner" && styles.activeTab,
+                        ]}
                     >
-                        <Text style={[styles.tabText, tab === "owner" && styles.activeTabText]}>
+                        <Text
+                            style={[
+                                styles.tabText,
+                                tab === "owner" && styles.activeTabText,
+                            ]}
+                        >
                             กิจกรรมที่จัด
                         </Text>
                     </TouchableOpacity>
@@ -265,74 +338,166 @@ export default function MemberHome() {
 
                 {/* กำลังโหลดข้อมูล */}
                 {isLoading ? (
-                    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                    <View
+                        style={{
+                            flex: 1,
+                            justifyContent: "center",
+                            alignItems: "center",
+                        }}
+                    >
                         <ActivityIndicator size="large" color="#0000ff" />
-                        <Text style={{ fontFamily: "Kanit_600SemiBold", marginTop: 10 }}>กำลังโหลดข้อมูล...</Text>
+                        <Text
+                            style={{
+                                fontFamily: "Kanit_600SemiBold",
+                                marginTop: 10,
+                            }}
+                        >
+                            กำลังโหลดข้อมูล...
+                        </Text>
                     </View>
                 ) : (
                     // รายการกิจกรรม
                     <FlatList
                         data={activityList}
-                        renderItem={({item}) => (
-                            <TouchableOpacity 
-                                activeOpacity={0.8} 
-                                onPress={() => router.push({
-                                    pathname: "activityDetail",
-                                    params: {
-                                        id: item.id
+                        renderItem={({ item }) => {
+                            if (item.type === "header") {
+                                return (
+                                    <View
+                                        style={{
+                                            flexDirection: "row",
+                                            alignItems: "center",
+                                            marginVertical: 3,
+                                            marginHorizontal: 8,
+                                        }}
+                                    >
+                                        {/* เส้นซ้าย */}
+                                        <View
+                                            style={{
+                                                flex: 1,
+                                                height: 1,
+                                                backgroundColor: "#ccc",
+                                            }}
+                                        />
+
+                                        {/* ข้อความ header */}
+                                        <Text
+                                            style={{
+                                                marginHorizontal: 12,
+                                                fontSize: 14,
+                                                fontFamily: "Kanit_700Bold",
+                                                color: "#333",
+                                            }}
+                                        >
+                                            {item.title}
+                                        </Text>
+
+                                        {/* เส้นขวา */}
+                                        <View
+                                            style={{
+                                                flex: 1,
+                                                height: 1,
+                                                backgroundColor: "#ccc",
+                                            }}
+                                        />
+                                    </View>
+                                );
+                            }
+
+                            return (
+                                <TouchableOpacity
+                                    activeOpacity={0.8}
+                                    onPress={() =>
+                                        router.push({
+                                            pathname: "activityDetail",
+                                            params: {
+                                                id: item.id,
+                                            },
+                                        })
                                     }
-                                })}
-                            >
-                                <View style={styles.listContainer}>
-                                    {/* ข้อความกิจกรรมถูกยกเลิก */}
-                                    {item.status === "cancel" && (
-                                        <View style={styles.overlay}>
-                                            <Text style={styles.cancelText}>กิจกรรมถูกยกเลิก</Text>
-                                        </View>
-                                    )}
+                                >
+                                    <View style={styles.listContainer}>
+                                        {item.status === "cancel" && (
+                                            <View style={styles.overlay}>
+                                                <Text style={styles.cancelText}>
+                                                    กิจกรรมถูกยกเลิก
+                                                </Text>
+                                            </View>
+                                        )}
 
-                                    {/* Header: จำนวนผู้เข้าร่วม */}
-                                    <View style={{flexDirection: "row", alignItems: "center", justifyContent: "space-between"}}>
-                                        <View style={{flexDirection: "row", alignItems: "center"}}>
-                                            <AntDesign name="user" color="black" size={14} />
+                                        <View
+                                            style={{
+                                                flexDirection: "row",
+                                                alignItems: "center",
+                                                justifyContent: "space-between",
+                                            }}
+                                        >
+                                            <View
+                                                style={{
+                                                    flexDirection: "row",
+                                                    alignItems: "center",
+                                                }}
+                                            >
+                                                <AntDesign
+                                                    name="user"
+                                                    color="black"
+                                                    size={14}
+                                                />
+                                                <Text
+                                                    style={styles.activityHead}
+                                                >
+                                                    {item.registrations}/
+                                                    {item.max}
+                                                </Text>
+                                            </View>
                                             <Text style={styles.activityHead}>
-                                                {item.registrations}/{item.max}
+                                                {item.startDate}
                                             </Text>
                                         </View>
-                                        <Text style={styles.activityHead}>
-                                            {item.startDate}
-                                        </Text>
-                                    </View>
 
-                                    {/* ชื่อกิจกรรม */}
-                                    <Text style={styles.activityName}>
-                                        {item.name}
-                                    </Text>
-
-                                    {/* คำอธิบายกิจกรรม */}
-                                    <Text style={styles.activityDetail} numberOfLines={2}>
-                                        {item.description}
-                                    </Text>
-
-                                    <View style={styles.activityFooter}>
-                                        {/* หมวดหมู่ */}
-                                        <Text style={styles.activityCategory}>
-                                            {item.category}
+                                        <Text style={styles.activityName}>
+                                            {item.name}
                                         </Text>
 
-                                        {/* สถานที่ */}
-                                        <View style={{flexDirection: "row", alignItems: "center"}}>
-                                            <MaterialIcons name="location-on" color="black" size={18} />
-                                            <Text style={styles.activityPlace}>
-                                                {item.locationName}
+                                        <Text
+                                            style={styles.activityDetail}
+                                            numberOfLines={2}
+                                        >
+                                            {item.description}
+                                        </Text>
+
+                                        <View style={styles.activityFooter}>
+                                            <Text
+                                                style={styles.activityCategory}
+                                            >
+                                                {item.category}
                                             </Text>
+
+                                            <View
+                                                style={{
+                                                    flexDirection: "row",
+                                                    alignItems: "center",
+                                                }}
+                                            >
+                                                <MaterialIcons
+                                                    name="location-on"
+                                                    color="black"
+                                                    size={18}
+                                                />
+                                                <Text
+                                                    style={styles.activityPlace}
+                                                >
+                                                    {item.locationName}
+                                                </Text>
+                                            </View>
                                         </View>
                                     </View>
-                                </View>
-                            </TouchableOpacity>
-                        )}
-                        keyExtractor={(item) => item.id}
-                        contentContainerStyle={{ padding: 8}}
+                                </TouchableOpacity>
+                            );
+                        }}
+                        keyExtractor={(item, index) =>
+                            item.key ?? item.id ?? index.toString()
+                        }
+                        contentContainerStyle={{ padding: 8 }}
                         showsVerticalScrollIndicator={false}
                         refreshControl={
                             <RefreshControl
@@ -349,9 +514,9 @@ export default function MemberHome() {
 
 const styles = StyleSheet.create({
     container: {
-        height: "100%", 
-        backgroundColor: "white", 
-        paddingTop: 18
+        height: "100%",
+        backgroundColor: "white",
+        paddingTop: 18,
     },
     headerContainer: {
         alignItems: "center",
@@ -364,14 +529,14 @@ const styles = StyleSheet.create({
         fontSize: 22,
     },
     buttonContainer: {
-        flexDirection: "row", 
-        justifyContent: "center", 
+        flexDirection: "row",
+        justifyContent: "center",
         gap: 50,
-        marginTop: 10
+        marginTop: 10,
     },
     profileEditBtn: {
         fontFamily: "Kanit_600SemiBold",
-        color: "blue"
+        color: "blue",
     },
     profileLogoutBtn: {
         fontFamily: "Kanit_600SemiBold",
@@ -386,7 +551,7 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: "center",
         padding: 8,
-        },
+    },
     activeTab: {
         borderBottomWidth: 2,
         borderBottomColor: "black",
@@ -404,7 +569,7 @@ const styles = StyleSheet.create({
         height: 120,
         objectFit: "contain",
         borderRadius: 15,
-        elevation: 4
+        elevation: 4,
     },
     listContainer: {
         backgroundColor: "white",
@@ -420,7 +585,7 @@ const styles = StyleSheet.create({
         color: "#6b7280",
         fontSize: 14,
         marginLeft: 4,
-        fontFamily: "Kanit_600SemiBold"
+        fontFamily: "Kanit_600SemiBold",
     },
     activityName: {
         fontFamily: "Kanit_700Bold",
@@ -431,13 +596,13 @@ const styles = StyleSheet.create({
     activityDetail: {
         color: "#57595c",
         fontSize: 14,
-        fontFamily: "Kanit_600SemiBold"
+        fontFamily: "Kanit_600SemiBold",
     },
     activityFooter: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        marginTop: "auto"
+        marginTop: "auto",
     },
     activityCategory: {
         fontSize: 12,
@@ -446,12 +611,12 @@ const styles = StyleSheet.create({
         paddingHorizontal: 8,
         paddingVertical: 4,
         borderRadius: 10,
-        fontFamily: "Kanit_600SemiBold"
+        fontFamily: "Kanit_600SemiBold",
     },
     activityPlace: {
         color: "#57595c",
         fontSize: 14,
-        fontFamily: "Kanit_400Regular"
+        fontFamily: "Kanit_400Regular",
     },
     overlay: {
         ...StyleSheet.absoluteFillObject, // ทำให้ครอบคลุมพื้นที่ทั้งหมด
@@ -465,5 +630,4 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontFamily: "Kanit_600SemiBold",
     },
-
-})
+});

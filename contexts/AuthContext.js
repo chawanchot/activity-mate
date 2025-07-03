@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useRef } from "react";
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
 import { Alert } from "react-native";
@@ -11,14 +11,29 @@ export const AuthProvider = ({ children }) => {
     const [loggedIn, setLoggedIn] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
+    // 🔁 เก็บ unsubscribe สำหรับ realtime listeners
+    const userUnsubscribeRef = useRef(null);
+    const suspendedUnsubscribeRef = useRef(null);
+
     useEffect(() => {
         const subscriber = auth().onAuthStateChanged(async (data) => {
             setIsLoading(true);
 
+            // 🔁 Cleanup ทุกครั้งที่ user เปลี่ยนหรือออกจากระบบ
+            if (userUnsubscribeRef.current) {
+                userUnsubscribeRef.current();
+                userUnsubscribeRef.current = null;
+            }
+
+            if (suspendedUnsubscribeRef.current) {
+                suspendedUnsubscribeRef.current();
+                suspendedUnsubscribeRef.current = null;
+            }
+
             if (data) {
                 try {
-                    // ฟังข้อมูลผู้ใช้แบบเรียลไทม์
-                    const userUnsubscribe = firestore()
+                    // 🔎 ฟังข้อมูลผู้ใช้แบบ realtime
+                    userUnsubscribeRef.current = firestore()
                         .collection("users")
                         .doc(data.uid)
                         .onSnapshot(
@@ -28,7 +43,7 @@ export const AuthProvider = ({ children }) => {
                                     setUser(userData);
                                     setLoggedIn(true);
                                 } else {
-                                    // สร้างผู้ใช้ใหม่ถ้าไม่มีใน Firestore
+                                    // ➕ สร้างผู้ใช้ใหม่ถ้ายังไม่มีใน Firestore
                                     const newUser = {
                                         username: data.displayName || "Unknown User",
                                         email: data.email,
@@ -44,6 +59,7 @@ export const AuthProvider = ({ children }) => {
                                     setUser({ uid: data.uid, ...newUser });
                                     setLoggedIn(true);
                                 }
+
                                 setIsLoading(false);
                             },
                             (error) => {
@@ -52,8 +68,8 @@ export const AuthProvider = ({ children }) => {
                             }
                         );
 
-                    // ฟังสถานะ suspended แบบเรียลไทม์
-                    const suspendedUnsubscribe = firestore()
+                    // 🔎 ฟังสถานะ suspended แบบ realtime
+                    suspendedUnsubscribeRef.current = firestore()
                         .collection("suspended")
                         .where("userID", "==", data.uid)
                         .orderBy("suspendedEnd", "desc")
@@ -66,18 +82,27 @@ export const AuthProvider = ({ children }) => {
 
                                 if (!snapshot.empty) {
                                     const suspendedData = snapshot.docs[0].data();
-                                    suspendEndDate = suspendedData.suspendedEnd.toDate(); // แปลง Timestamp เป็น Date
+                                    suspendEndDate = suspendedData.suspendedEnd.toDate();
                                     const currentDate = new Date();
 
                                     if (currentDate <= suspendEndDate) {
-                                        // ถ้ายังอยู่ในช่วงระงับ
                                         isSuspended = true;
                                         reason = suspendedData.reason;
                                     }
                                 }
 
-                                // ถ้าถูกระงับ ให้ออกจากระบบทันที
                                 if (isSuspended) {
+                                    // 🛑 ยกเลิก listener ก่อน signOut
+                                    if (suspendedUnsubscribeRef.current) {
+                                        suspendedUnsubscribeRef.current();
+                                        suspendedUnsubscribeRef.current = null;
+                                    }
+
+                                    if (userUnsubscribeRef.current) {
+                                        userUnsubscribeRef.current();
+                                        userUnsubscribeRef.current = null;
+                                    }
+
                                     await auth().signOut();
                                     setUser(null);
                                     setLoggedIn(false);
@@ -96,24 +121,32 @@ export const AuthProvider = ({ children }) => {
                                 setIsLoading(false);
                             }
                         );
-
-                    // คืนฟังก์ชัน cleanup สำหรับทั้งสอง listener
-                    return () => {
-                        userUnsubscribe();
-                        suspendedUnsubscribe();
-                    };
                 } catch (error) {
                     console.error("Error setting up listeners:", error);
                     setIsLoading(false);
                 }
             } else {
+                // 👤 ผู้ใช้ไม่ได้ล็อกอิน
                 setLoggedIn(false);
                 setUser(null);
                 setIsLoading(false);
             }
         });
 
-        return subscriber;
+        // ✅ cleanup รวมเมื่อ component unmount
+        return () => {
+            subscriber();
+
+            if (userUnsubscribeRef.current) {
+                userUnsubscribeRef.current();
+                userUnsubscribeRef.current = null;
+            }
+
+            if (suspendedUnsubscribeRef.current) {
+                suspendedUnsubscribeRef.current();
+                suspendedUnsubscribeRef.current = null;
+            }
+        };
     }, []);
 
     return (

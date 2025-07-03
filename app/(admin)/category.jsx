@@ -40,6 +40,9 @@ export default function Category() {
                 });
             });
 
+            // เรียงตามตัวอักษร
+            Arr.sort((a, b) => a.name.localeCompare(b.name));
+
             setCategory(Arr);
         } catch (error) {
             console.error("Error fetching category data:", error);
