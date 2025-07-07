@@ -190,7 +190,7 @@ export default function ManageActivity() {
                                 onPress={() => router.push({
                                     pathname: "/searchEventLocation",
                                     params: {
-                                        backRoute: "/seachActivity"
+                                        backRoute: "/manageActivity"
                                     }
                                 })}
                             >
