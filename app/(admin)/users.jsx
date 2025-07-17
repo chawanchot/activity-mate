@@ -15,8 +15,10 @@ import {
 import DropDownPicker from "react-native-dropdown-picker";
 import firestore from "@react-native-firebase/firestore";
 import { MaterialIcons, AntDesign, FontAwesome5 } from "@expo/vector-icons";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function Users() {
+    const { user } = useAuth();
     const [openDropdown, setOpenDropdown] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
@@ -80,6 +82,13 @@ export default function Users() {
     };
 
     const changeRole = (id, username, role) => {
+        if (id === user.uid) {
+            Alert.alert("แจ้งเตือน", "ไม่สามารถเปลี่ยนสิทธิ์ของตนเองได้", [
+                { text: "ตกลง" }
+            ]);
+            return;
+        }
+        
         Alert.alert("แจ้งเตือน", `${role === "member" ? "ยืนยันให้สิทธิ์ผู้ดูแลระบบ" : "ยืนยันยกเลิกสิทธิ์ผู้ดูแลระบบ"} ${username}`, [
             {
                 text: "ยกเลิก",
@@ -103,6 +112,13 @@ export default function Users() {
     }
 
     const openSuspendedModal = (id) => {
+        if (id === user.uid) {
+            Alert.alert("แจ้งเตือน", "ไม่สามารถระงับบัญชีตนเองได้", [
+                { text: "ตกลง" }
+            ]);
+            return;
+        }
+
         setSuspendedSelected(id);
         setShowModal(true);
     }
