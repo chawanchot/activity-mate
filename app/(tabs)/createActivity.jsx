@@ -134,7 +134,7 @@ export default function MemberCreateActivity() {
                 console.error("Error saving activity:", error);
             }
         } else {
-            Alert.alert("ผิดพลาด", "ข้อมูลไม่ครบถ้วน", [{ text: "ตกลง" }]);
+            Alert.alert("แจ้งเตือน", "กรอกข้อมูลให้ครบถ้วน", [{ text: "ตกลง" }]);
         }
     }
 

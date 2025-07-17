@@ -14,7 +14,12 @@ import {
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
-import { MaterialIcons, FontAwesome, AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
+import {
+    MaterialIcons,
+    FontAwesome,
+    AntDesign,
+    MaterialCommunityIcons,
+} from "@expo/vector-icons";
 import firestore from "@react-native-firebase/firestore";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../contexts/AuthContext";
@@ -88,7 +93,7 @@ export default function ActivityDetail() {
                 .get();
 
             if (!reviewsSnapshot.empty) {
-                reviewsSnapshot.forEach(doc => {
+                reviewsSnapshot.forEach((doc) => {
                     const reviewData = doc.data();
                     totalRating += reviewData.rating; // รวม rating ทั้งหมด
                     totalReviews += 1; // นับจำนวนรีวิว
@@ -270,53 +275,64 @@ export default function ActivityDetail() {
     };
 
     const cancelRegistered = async () => {
-        try {
-            const querySnapshot = await firestore()
-                .collection("registrations")
-                .where("userID", "==", user.uid)
-                .get();
+        Alert.alert("แจ้งเตือน", "ยืนยันยกเลิกการเข้าร่วมกิจกรรม", [
+            {
+                text: "ยกเลิก",
+            },
+            {
+                text: "ยืนยัน",
+                onPress: async () => {
+                    try {
+                        const querySnapshot = await firestore()
+                            .collection("registrations")
+                            .where("userID", "==", user.uid)
+                            .where("activityID", "==", params.id)
+                            .get();
 
-            if (querySnapshot.empty) {
-                console.log("ไม่พบข้อมูล");
-                return;
-            }
+                        if (querySnapshot.empty) {
+                            console.log("ไม่พบข้อมูล");
+                            return;
+                        }
 
-            const batch = firestore().batch();
-            querySnapshot.forEach((documentSnapshot) => {
-                batch.delete(documentSnapshot.ref);
-            });
+                        const batch = firestore().batch();
+                        querySnapshot.forEach((documentSnapshot) => {
+                            batch.delete(documentSnapshot.ref);
+                        });
 
-            await batch.commit();
-            setRegisted(false);
-            getActivityData();
-        } catch (error) {
-            console.error("เกิดข้อผิดพลาดในการลบข้อมูล:", error);
-        }
+                        await batch.commit();
+                        setRegisted(false);
+                        getActivityData();
+                    } catch (error) {
+                        console.error("เกิดข้อผิดพลาดในการลบข้อมูล:", error);
+                    }
+                },
+            },
+        ]);
     };
 
     const confirmReviews = () => {
         if (comment && rating) {
             firestore()
-            .collection("reviews")
-            .add({
-                userID: activity.owner.id,
-                reviewBy: user.uid,
-                rating: rating,
-                comment: comment,
-                activityID: params.id, 
-            })
-            .then(() => {
-                setShowModal(false);
-                getActivityData();
-            })
+                .collection("reviews")
+                .add({
+                    userID: activity.owner.id,
+                    reviewBy: user.uid,
+                    rating: rating,
+                    comment: comment,
+                    activityID: params.id,
+                })
+                .then(() => {
+                    setShowModal(false);
+                    getActivityData();
+                });
         } else {
             Alert.alert("ผิดพลาด", "กรอกข้อมูลให้ครบถ้วน", [
                 {
                     text: "ตกลง",
-                }
+                },
             ]);
         }
-    }
+    };
 
     const onRefresh = () => {
         setRefreshing(true);
@@ -447,7 +463,12 @@ export default function ActivityDetail() {
                                     </Text>
                                 </View>
                                 {averageOwnerRating > 0 && (
-                                    <View style={[styles.reviewsRating, { marginLeft: 12 }]}>
+                                    <View
+                                        style={[
+                                            styles.reviewsRating,
+                                            { marginLeft: 12 },
+                                        ]}
+                                    >
                                         <FontAwesome
                                             name="star"
                                             size={16}
@@ -474,13 +495,25 @@ export default function ActivityDetail() {
                                     }}
                                 >
                                     {activity.registrations.map((item) => (
-                                        <View key={item.id} style={{ width: "50%" }}>
+                                        <View
+                                            key={item.id}
+                                            style={{ width: "50%" }}
+                                        >
                                             <View style={styles.registeredItem}>
                                                 <Image
-                                                    source={{ uri: item.profilePicture }}
-                                                    style={styles.registeredImage}
+                                                    source={{
+                                                        uri: item.profilePicture,
+                                                    }}
+                                                    style={
+                                                        styles.registeredImage
+                                                    }
                                                 />
-                                                <Text style={styles.registeredName} numberOfLines={1}>
+                                                <Text
+                                                    style={
+                                                        styles.registeredName
+                                                    }
+                                                    numberOfLines={1}
+                                                >
                                                     {item.username}
                                                 </Text>
                                             </View>
@@ -554,10 +587,16 @@ export default function ActivityDetail() {
                     {user.role !== "admin" && (
                         <>
                             {activity.status === "ongoing" ? (
-                                <View style={{ marginBottom: 10, marginTop: 50 }}>
+                                <View
+                                    style={{ marginBottom: 10, marginTop: 50 }}
+                                >
                                     {activity.createdByUserID === user.uid ? (
                                         <View>
-                                            <View style={styles.chatButtonContainer}>
+                                            <View
+                                                style={
+                                                    styles.chatButtonContainer
+                                                }
+                                            >
                                                 <TouchableOpacity
                                                     activeOpacity={0.8}
                                                     style={styles.chatButton}
@@ -576,7 +615,11 @@ export default function ActivityDetail() {
                                                         color="white"
                                                         size={24}
                                                     />
-                                                    <Text style={styles.chatButtonText}>
+                                                    <Text
+                                                        style={
+                                                            styles.chatButtonText
+                                                        }
+                                                    >
                                                         สนทนา
                                                     </Text>
                                                 </TouchableOpacity>
@@ -590,12 +633,17 @@ export default function ActivityDetail() {
                                                     สิ้นสุดกิจกรรม
                                                 </Text>
                                             </TouchableOpacity>
-                                            <View style={styles.editCancelButtonContainer}>
+                                            <View
+                                                style={
+                                                    styles.editCancelButtonContainer
+                                                }
+                                            >
                                                 <TouchableOpacity
                                                     activeOpacity={0.8}
                                                     onPress={() =>
                                                         router.push({
-                                                            pathname: "editActivity",
+                                                            pathname:
+                                                                "editActivity",
                                                             params: {
                                                                 id: params.id,
                                                             },
@@ -603,7 +651,11 @@ export default function ActivityDetail() {
                                                     }
                                                     style={styles.editButton}
                                                 >
-                                                    <Text style={styles.buttonText}>
+                                                    <Text
+                                                        style={
+                                                            styles.buttonText
+                                                        }
+                                                    >
                                                         แก้ไข
                                                     </Text>
                                                 </TouchableOpacity>
@@ -612,7 +664,11 @@ export default function ActivityDetail() {
                                                     onPress={cancelActivity}
                                                     style={styles.cancelButton}
                                                 >
-                                                    <Text style={styles.buttonText}>
+                                                    <Text
+                                                        style={
+                                                            styles.buttonText
+                                                        }
+                                                    >
                                                         ยกเลิกกิจกรรม
                                                     </Text>
                                                 </TouchableOpacity>
@@ -627,7 +683,9 @@ export default function ActivityDetail() {
                                                     style={styles.joinButton}
                                                 >
                                                     <Text
-                                                        style={styles.joinButtonText}
+                                                        style={
+                                                            styles.joinButtonText
+                                                        }
                                                         onPress={joinActivity}
                                                     >
                                                         เข้าร่วมกิจกรรม
@@ -636,31 +694,55 @@ export default function ActivityDetail() {
                                             ) : (
                                                 // หลังจากเข้าร่วม
                                                 <View>
-                                                    <View style={styles.chatButtonContainer}>
+                                                    <View
+                                                        style={
+                                                            styles.chatButtonContainer
+                                                        }
+                                                    >
                                                         <TouchableOpacity
                                                             activeOpacity={0.8}
-                                                            style={styles.chatButton}
+                                                            style={
+                                                                styles.chatButton
+                                                            }
                                                             onPress={() =>
                                                                 router.push({
-                                                                    pathname: "chat",
+                                                                    pathname:
+                                                                        "chat",
                                                                     params: {
-                                                                        activityID: params.id,
+                                                                        activityID:
+                                                                            params.id,
                                                                     },
                                                                 })
                                                             }
                                                         >
-                                                            <MaterialIcons name="chat-bubble-outline" color="white" size={24} />
-                                                            <Text style={styles.chatButtonText}>
+                                                            <MaterialIcons
+                                                                name="chat-bubble-outline"
+                                                                color="white"
+                                                                size={24}
+                                                            />
+                                                            <Text
+                                                                style={
+                                                                    styles.chatButtonText
+                                                                }
+                                                            >
                                                                 สนทนา
                                                             </Text>
                                                         </TouchableOpacity>
                                                     </View>
                                                     <TouchableOpacity
                                                         activeOpacity={0.8}
-                                                        style={styles.unRegisterButton}
-                                                        onPress={cancelRegistered}
+                                                        style={
+                                                            styles.unRegisterButton
+                                                        }
+                                                        onPress={
+                                                            cancelRegistered
+                                                        }
                                                     >
-                                                        <Text style={styles.unRegisterText}>
+                                                        <Text
+                                                            style={
+                                                                styles.unRegisterText
+                                                            }
+                                                        >
                                                             ยกเลิกการเข้าร่วม
                                                         </Text>
                                                     </TouchableOpacity>
@@ -671,17 +753,28 @@ export default function ActivityDetail() {
                                 </View>
                             ) : (
                                 <>
-                                   {activity.status === "success" ? (
+                                    {activity.status === "success" ? (
                                         <View>
-                                            {activity.createdByUserID !== user.uid && (
+                                            {activity.createdByUserID !==
+                                                user.uid && (
                                                 <>
                                                     {showReviewBtn && (
                                                         <TouchableOpacity
                                                             activeOpacity={0.8}
-                                                            style={styles.reviewButton}
-                                                            onPress={() => setShowModal(true)}
+                                                            style={
+                                                                styles.reviewButton
+                                                            }
+                                                            onPress={() =>
+                                                                setShowModal(
+                                                                    true
+                                                                )
+                                                            }
                                                         >
-                                                            <Text style={styles.reviewText}>
+                                                            <Text
+                                                                style={
+                                                                    styles.reviewText
+                                                                }
+                                                            >
                                                                 แสดงความคิดเห็นและให้คะแนน
                                                             </Text>
                                                         </TouchableOpacity>
@@ -697,7 +790,6 @@ export default function ActivityDetail() {
                                             กิจกรรมถูกยกเลิก
                                         </Text>
                                     )}
-                                    
                                 </>
                             )}
                         </>
@@ -717,7 +809,9 @@ export default function ActivityDetail() {
             >
                 <View style={styles.modalContainer}>
                     <View style={styles.modalContent}>
-                        <Text style={styles.modalHeader}>แสดงความคิดเห็นและให้คะแนน</Text>
+                        <Text style={styles.modalHeader}>
+                            แสดงความคิดเห็นและให้คะแนน
+                        </Text>
                         <TouchableOpacity
                             activeOpacity={0.8}
                             onPress={() => setShowModal(false)}

@@ -105,10 +105,13 @@ export default function MemberHome() {
             }
 
             const ongoingActivities = dataActivity.filter(
-                (a) => a.status !== "success"
+                (a) => a.status === "ongoing"
             );
             const endedActivities = dataActivity.filter(
                 (a) => a.status === "success"
+            );
+            const cancelActivities = dataActivity.filter(
+                (a) => a.status === "cancel"
             );
 
             const mergedList = [];
@@ -129,6 +132,15 @@ export default function MemberHome() {
                     key: "ended",
                 });
                 mergedList.push(...endedActivities);
+            }
+
+            if (cancelActivities.length > 0) {
+                mergedList.push({
+                    type: "header",
+                    title: "ยกเลิก",
+                    key: "cancel",
+                });
+                mergedList.push(...cancelActivities);
             }
 
             setActivityList(mergedList);
@@ -206,10 +218,13 @@ export default function MemberHome() {
             }
 
             const ongoingActivities = dataActivity.filter(
-                (a) => a.status !== "success"
+                (a) => a.status === "ongoing"
             );
             const endedActivities = dataActivity.filter(
                 (a) => a.status === "success"
+            );
+            const cancelActivities = dataActivity.filter(
+                (a) => a.status === "cancel"
             );
 
             const mergedList = [];
@@ -230,6 +245,15 @@ export default function MemberHome() {
                     key: "ended",
                 });
                 mergedList.push(...endedActivities);
+            }
+
+            if (cancelActivities.length > 0) {
+                mergedList.push({
+                    type: "header",
+                    title: "ยกเลิก",
+                    key: "cancel",
+                });
+                mergedList.push(...cancelActivities);
             }
 
             setActivityList(mergedList);

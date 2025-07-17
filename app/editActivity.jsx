@@ -158,7 +158,7 @@ export default function EditActivity() {
                 setCreating(false);
             }
         } else {
-            Alert.alert("", "ข้อมูลไม่ครบถ้วน");
+            Alert.alert("แจ้งเตือน", "กรอกข้อมูลให้ครบถ้วน");
         }
     }
 
