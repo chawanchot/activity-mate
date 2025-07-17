@@ -50,8 +50,6 @@ export default function MemberCreateActivity() {
     const pickImage = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ["images"],
-            allowsEditing: true, // แก้ไขภาพ
-            aspect: [1, 1], // อัตราส่วนภาพ
             quality: 0.5, // ความคมชัด
             });
 
@@ -257,6 +255,7 @@ export default function MemberCreateActivity() {
                             {showStartTimePicker && (
                                 <DateTimePicker
                                     value={startTime}
+                                    is24Hour={true}
                                     mode="time"
                                     onChange={(event, selected) => {
                                         setShowStartTimePicker(false);
@@ -312,6 +311,7 @@ export default function MemberCreateActivity() {
                             {showEndTimePicker && (
                                 <DateTimePicker
                                     value={endTime}
+                                    is24Hour={true}
                                     mode="time"
                                     onChange={(event, selected) => {
                                         setShowEndTimePicker(false);

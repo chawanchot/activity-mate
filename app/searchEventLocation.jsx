@@ -47,7 +47,13 @@ export default function ProvinceScreen() {
         setSelectedDistrict("");
         setSelectedSubDistrict("");
         const filltered = locationData.filter((item) => item.name_th === provice);
-        setFillteredDistrict(filltered[0].amphure);
+
+        // เรียงตามตัวอักษร
+        const sortedDistrict = [...filltered[0].amphure].sort((a, b) =>
+            a.name_th.localeCompare(b.name_th)
+        );
+
+        setFillteredDistrict(sortedDistrict);
         setTab("district");
     };
 
@@ -55,7 +61,13 @@ export default function ProvinceScreen() {
         setSelectedDistrict(district);
         setSelectedSubDistrict("");
         const filltered = fillteredDistrict.filter((item) => item.name_th === district);
-        setFillteredSubDistrict(filltered[0].tambon);
+
+        // เรียงตามตัวอักษร
+        const sortedSubDistrict = [...filltered[0].tambon].sort((a, b) =>
+            a.name_th.localeCompare(b.name_th)
+        );
+
+        setFillteredSubDistrict(sortedSubDistrict);
         setTab("subdistrict");
     };
 
@@ -64,7 +76,7 @@ export default function ProvinceScreen() {
     }
 
     const confirm = () => {
-        router.push({
+        router.replace({
             pathname: params.backRoute,
             params: {
                 provice: selectedProvice,
@@ -75,7 +87,7 @@ export default function ProvinceScreen() {
     };
 
     const clearSearch = () => {
-        router.push({
+        router.replace({
             pathname: params.backRoute,
             params: {
                 provice: "",
@@ -120,7 +132,7 @@ export default function ProvinceScreen() {
                 {/* จังหวัด */}
                 {tab === "provice" ? (
                     <FlatList
-                        data={locationData}
+                        data={[...locationData].sort((a, b) => a.name_th.localeCompare(b.name_th))} // เรียงจังหวัดตามตัวอักษรก่อนแสดง 
                         keyExtractor={(item) => item.id.toString()}
                         renderItem={({ item }) => (
                             <TouchableOpacity

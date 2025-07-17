@@ -19,7 +19,7 @@ import { router } from "expo-router";
 import firestore from "@react-native-firebase/firestore";
 
 export default function Login() {
-    const { loggedIn } = useAuth();
+    const { loggedIn, clearFirestoreCache } = useAuth();
 
     useEffect(() => {
         if (loggedIn) {

@@ -61,7 +61,7 @@ export default function Category() {
 
                 if (!querySnapshot.empty) {
                     // ถ้ามีชื่อซ้ำ ให้แสดงแจ้งเตือน
-                    Alert.alert("ผิดพลาด", "หมวดหมู่นี้มีอยู่แล้ว", [
+                    Alert.alert("แจ้งเตือน", "หมวดหมู่นี้มีอยู่แล้ว", [
                         {
                             text: "ตกลง",
                         },
@@ -80,7 +80,7 @@ export default function Category() {
                 console.error("Error adding category:", error);
             }
         } else {
-            Alert.alert("ผิดพลาด", "กรุณากรอกข้อมูล", [
+            Alert.alert("แจ้งเตือน", "กรุณากรอกข้อมูล", [
                 {
                     text: "ตกลง",
                 },
@@ -105,7 +105,7 @@ export default function Category() {
                     .get();
 
                 if (!querySnapshot.empty) {
-                    Alert.alert("ผิดพลาด", "หมวดหมู่นี้มีอยู่แล้ว", [
+                    Alert.alert("แจ้งเตือน", "หมวดหมู่นี้มีอยู่แล้ว", [
                         {
                             text: "ตกลง",
                         },
@@ -122,7 +122,7 @@ export default function Category() {
                 console.error("Error updating category:", error);
             }
         } else {
-            Alert.alert("ผิดพลาด", "กรุณากรอกข้อมูล", [
+            Alert.alert("แจ้งเตือน", "กรุณากรอกข้อมูล", [
                 {
                     text: "ตกลง",
                 },
@@ -132,7 +132,7 @@ export default function Category() {
 
     // ฟังก์ชันเปิดใช้งานหมวดหมู่ที่ถูกปิดใช้งาน
     const enableCategory = async (id, name) => {
-        Alert.alert("เปิดใช้งานหมวดหมู่กิจกรรม", "ยืนยันเปิดใช้งานหมวดหมู่ " + name, [
+        Alert.alert("แจ้งเตือน", "ยืนยันเปิดใช้งานหมวดหมู่" + name, [
             {
                 text: "ยกเลิก",
             },
@@ -154,7 +154,7 @@ export default function Category() {
 
     // ฟังก์ชันยกเลิกใช้งานหมวดหมู่
     const cancelCategory = async (id, name) => {
-        Alert.alert("แจ้งเตือน", "ยืนยันยกเลิกใช้งานหมวดหมู่ " + name, [
+        Alert.alert("แจ้งเตือน", "ยืนยันยกเลิกใช้งานหมวดหมู่" + name, [
             {
                 text: "ยกเลิก",
             },

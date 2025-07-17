@@ -27,7 +27,7 @@ export default function MemberHome() {
     const [activityList, setActivityList] = useState([]);
 
     const logout = () => {
-        Alert.alert("ออกจากระบบ", "ยืนยันการออกจากระบบ", [
+        Alert.alert("แจ้งเตือน", "ยืนยันการออกจากระบบ", [
             {
                 text: "ยกเลิก",
             },

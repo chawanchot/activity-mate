@@ -51,8 +51,6 @@ export default function EditActivity() {
     const pickImage = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ["images"],
-            allowsEditing: true, // แก้ไขภาพ
-            aspect: [1, 1], // อัตราส่วนภาพ
             quality: 0.5, // ความคมชัด
             });
 

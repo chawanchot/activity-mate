@@ -70,6 +70,8 @@ export default function Users() {
                 item.username.toLowerCase().includes(search.toLowerCase())
             );
 
+            filtered.sort((a, b) => a.username.localeCompare(b.username));
+
             // อัปเดต state
             setUsersData(filtered);
         } catch (error) {
@@ -78,7 +80,7 @@ export default function Users() {
     };
 
     const changeRole = (id, username, role) => {
-        Alert.alert(role === "member" ? "ยืนยันให้สิทธิ์ผู้ดูแลระบบ" : "ยกเลิกสิทธิ์ผู้ดูแลระบบ", username, [
+        Alert.alert("แจ้งเตือน", `${role === "member" ? "ยืนยันให้สิทธิ์ผู้ดูแลระบบ" : "ยืนยันยกเลิกสิทธิ์ผู้ดูแลระบบ"} ${username}`, [
             {
                 text: "ยกเลิก",
             },

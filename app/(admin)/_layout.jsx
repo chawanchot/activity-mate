@@ -10,7 +10,7 @@ export default function AdminLayout() {
     const { loggedIn } = useAuth();
 
     const logout = () => {
-        Alert.alert("ออกจากระบบ", "ยืนยันการออกจากระบบ", [
+        Alert.alert("แจ้งเตือน", "ยืนยันการออกจากระบบ", [
             {
                 text: "ยกเลิก",
             },
