@@ -90,6 +90,31 @@ export default function MemberCreateActivity() {
                     endTime.getHours(),
                     endTime.getMinutes()
                 );
+
+                const currentDateTime = new Date(); 
+
+                // ตรวจสอบว่าเวลาเริ่มต้นต้องมากกว่าเวลาปัจจุบัน
+                if (combinedStartDateTime <= currentDateTime) {
+                    Alert.alert("แจ้งเตือน", "ไม่สามารถเลือกวันที่และเวลาเริ่มกิจกรรมที่น้อยกว่าปัจจุบันได้", [{ text: "ตกลง" }]);
+                    setCreating(false);
+                    return;
+                }
+
+                // ตรวจสอบว่าเวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้น
+                if (combinedEndDateTime <= combinedStartDateTime) {
+                    Alert.alert("แจ้งเตือน", "วันที่และเวลาสิ้นสุดกิจกรรมต้องมากกว่าวันที่และเวลาเริ่มต้น", [{ text: "ตกลง" }]);
+                    setCreating(false);
+                    return;
+                }
+
+                // ตรวจสอบว่าเวลาสิ้นสุดต้องห่างจากเวลาเริ่มต้นอย่างน้อย 30 นาที
+                const timeDifference = combinedEndDateTime.getTime() - combinedStartDateTime.getTime();
+                const minimumDuration = 30 * 60 * 1000; // 30 นาที
+                if (timeDifference < minimumDuration) {
+                    Alert.alert("แจ้งเตือน", "กิจกรรมต้องมีระยะเวลาอย่างน้อย 30 นาที", [{ text: "ตกลง" }]);
+                    setCreating(false);
+                    return;
+                }
     
                 // แปลงเป็น Firestore Timestamp
                 const startTimestamp = firestore.Timestamp.fromDate(combinedStartDateTime);
@@ -132,6 +157,7 @@ export default function MemberCreateActivity() {
                 setCreating(false);
             } catch (error) {
                 console.error("Error saving activity:", error);
+                setCreating(false);
             }
         } else {
             Alert.alert("แจ้งเตือน", "กรอกข้อมูลให้ครบถ้วน", [{ text: "ตกลง" }]);
@@ -230,10 +256,40 @@ export default function MemberCreateActivity() {
                                 <DateTimePicker
                                     value={startDate}
                                     mode="date"
+                                    minimumDate={new Date()}
                                     onChange={(event, selected) => {
                                         setShowStartDatePicker(false);
                                         if (selected) {
                                             setStartDate(selected);
+                                            // อัปเดต endDate ให้เป็นวันเดียวกันถ้า endDate น้อยกว่า startDate
+                                            if (endDate < selected) {
+                                                setEndDate(selected);
+                                            }
+                                            
+                                            // ถ้าเป็นวันเดียวกันและเวลาสิ้นสุดน้อยกว่าเวลาเริ่มต้น
+                                            if (selected.toDateString() === endDate.toDateString()) {
+                                                const startDateTime = new Date(
+                                                    selected.getFullYear(),
+                                                    selected.getMonth(),
+                                                    selected.getDate(),
+                                                    startTime.getHours(),
+                                                    startTime.getMinutes()
+                                                ).getTime();
+                                                
+                                                const endDateTime = new Date(
+                                                    endDate.getFullYear(),
+                                                    endDate.getMonth(),
+                                                    endDate.getDate(),
+                                                    endTime.getHours(),
+                                                    endTime.getMinutes()
+                                                ).getTime();
+                                                
+                                                if (endDateTime - startDateTime < 30 * 60 * 1000) { // น้อยกว่า 30 นาที
+                                                    const newEndTime = new Date(startTime);
+                                                    newEndTime.setMinutes(startTime.getMinutes() + 30); // เพิ่ม 30 นาที
+                                                    setEndTime(newEndTime);
+                                                }
+                                            }
                                         }
                                     }}
                                 />
@@ -261,6 +317,24 @@ export default function MemberCreateActivity() {
                                         setShowStartTimePicker(false);
                                         if (selected) {
                                             setStartTime(selected);
+
+                                            // ถ้าวันเดียวกันและเวลาสิ้นสุดน้อยกว่าเวลาเริ่มต้น + 30 นาที
+                                            if (startDate.toDateString() === endDate.toDateString()) {
+                                                const selectedTime = selected.getTime();
+                                                const endDateTime = new Date(
+                                                    endDate.getFullYear(),
+                                                    endDate.getMonth(),
+                                                    endDate.getDate(),
+                                                    endTime.getHours(),
+                                                    endTime.getMinutes()
+                                                ).getTime();
+                                                
+                                                if (endDateTime - selectedTime < 30 * 60 * 1000) { // น้อยกว่า 30 นาที
+                                                    const newEndTime = new Date(selected);
+                                                    newEndTime.setMinutes(selected.getMinutes() + 30); // เพิ่ม 30 นาที
+                                                    setEndTime(newEndTime);
+                                                }
+                                            }
                                         }
                                     }}
                                 />
@@ -286,6 +360,7 @@ export default function MemberCreateActivity() {
                                     value={endDate}
                                     mode="date"
                                     display="default"
+                                    minimumDate={startDate}
                                     onChange={(event, selected) => {
                                         setShowEndDatePicker(false);
                                         if (selected) {
@@ -316,6 +391,29 @@ export default function MemberCreateActivity() {
                                     onChange={(event, selected) => {
                                         setShowEndTimePicker(false);
                                         if (selected) {
+                                            // ตรวจสอบว่าเวลาสิ้นสุดห่างจากเวลาเริ่มต้นอย่างน้อย 30 นาที
+                                            if (startDate.toDateString() === endDate.toDateString()) {
+                                                const startDateTime = new Date(
+                                                    startDate.getFullYear(),
+                                                    startDate.getMonth(),
+                                                    startDate.getDate(),
+                                                    startTime.getHours(),
+                                                    startTime.getMinutes()
+                                                ).getTime();
+                                                
+                                                const selectedEndTime = new Date(
+                                                    endDate.getFullYear(),
+                                                    endDate.getMonth(),
+                                                    endDate.getDate(),
+                                                    selected.getHours(),
+                                                    selected.getMinutes()
+                                                ).getTime();
+                                                
+                                                if (selectedEndTime - startDateTime < 30 * 60 * 1000) { // น้อยกว่า 30 นาที
+                                                    Alert.alert("แจ้งเตือน", "เวลาสิ้นสุดต้องห่างจากเวลาเริ่มต้นอย่างน้อย 30 นาที", [{ text: "ตกลง" }]);
+                                                    return;
+                                                }
+                                            }
                                             setEndTime(selected);
                                         }
                                     }}

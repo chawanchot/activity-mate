@@ -10,6 +10,7 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loggedIn, setLoggedIn] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [isSuspended, setIsSuspended] = useState(false);
 
     // 🔁 เก็บ unsubscribe สำหรับ realtime listeners
     const userUnsubscribeRef = useRef(null);
@@ -92,28 +93,10 @@ export const AuthProvider = ({ children }) => {
                                 }
 
                                 if (isSuspended) {
-                                    // 🛑 ยกเลิก listener ก่อน signOut
-                                    if (suspendedUnsubscribeRef.current) {
-                                        suspendedUnsubscribeRef.current();
-                                        suspendedUnsubscribeRef.current = null;
-                                    }
-
-                                    if (userUnsubscribeRef.current) {
-                                        userUnsubscribeRef.current();
-                                        userUnsubscribeRef.current = null;
-                                    }
-
-                                    await auth().signOut();
-                                    setUser(null);
-                                    setLoggedIn(false);
+                                    setIsSuspended(true);
                                     setIsLoading(false);
-                                    router.replace("/login");
-
-                                    Alert.alert(
-                                        "บัญชีถูกระงับ",
-                                        `บัญชีของคุณถูกระงับจนถึง ${suspendEndDate.toLocaleString()} เหตุผล: ${reason}`,
-                                        [{ text: "ตกลง" }]
-                                    );
+                                } else {
+                                    setIsSuspended(false);
                                 }
                             },
                             (error) => {
@@ -150,7 +133,7 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     return (
-        <AuthContext.Provider value={{ user, setUser, isLoading, loggedIn }}>
+        <AuthContext.Provider value={{ user, setUser, isLoading, loggedIn, isSuspended }}>
             {children}
         </AuthContext.Provider>
     );

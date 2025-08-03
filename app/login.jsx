@@ -47,57 +47,7 @@ export default function Login() {
                 response?.data.idToken
             );
 
-            const userCredential = await auth().signInWithCredential(
-                googleCredential
-            );
-            const uid = userCredential.user.uid;
-
-            const userDocRef = firestore().collection("users").doc(uid);
-            const suspendedDocRef = firestore()
-                .collection("suspended")
-                .where("userID", "==", uid)
-                .orderBy("suspendedEnd", "desc") 
-                .limit(1);
-
-            // ตรวจสอบข้อมูลใน suspended
-            const suspendedDoc = await suspendedDocRef.get();
-            const userDoc = await userDocRef.get();
-
-            let isSuspended = false;
-            let suspendedEndDate = null;
-            let reason = "";
-
-            if (!suspendedDoc.empty) {
-                const suspendedData = suspendedDoc.docs[0].data(); // ดึงเอกสารแรก
-                if (suspendedData && suspendedData.suspendedEnd) {
-                    suspendedEndDate = suspendedData.suspendedEnd.toDate();
-                    const currentDate = new Date();
-                    if (currentDate > suspendedEndDate) {
-                        // await userDocRef.set({ status: true }, { merge: true }); // เพิ่ม merge เพื่อไม่ให้เขียนทับข้อมูลอื่น
-                    } else {
-                        isSuspended = true;
-                        reason = suspendedData.reason;
-                    }
-                }
-            } else {
-                isSuspended = false;
-            }
-
-            // if (isSuspended || (userDoc.exists && !userDoc.data().status)) {
-            if (isSuspended) {
-                auth().signOut();
-
-                console.log("TEST SUSPENDED 3")
-
-                Alert.alert(
-                    "บัญชีถูกระงับ",
-                    suspendedEndDate
-                        ? `บัญชีของคุณถูกระงับจนถึง ${suspendedEndDate.toLocaleString()} เหตุผล: ${reason}`
-                        : "บัญชีของคุณถูกระงับ กรุณาติดต่อผู้ดูแลระบบ",
-                    [{ text: "ตกลง" }]
-                );
-                return;
-            }
+            await auth().signInWithCredential(googleCredential);
         } catch (error) {
             if (isErrorWithCode(error)) {
                 switch (error.code) {
@@ -135,57 +85,8 @@ export default function Login() {
             const facebookCredential = auth.FacebookAuthProvider.credential(
                 data.accessToken
             );
-            const userCredential = await auth().signInWithCredential(
-                facebookCredential
-            );
-            const uid = userCredential.user.uid;
-
-            const userDocRef = firestore().collection("users").doc(uid);
-            const suspendedDocRef = firestore()
-                .collection("suspended")
-                .where("userID", "==", uid)
-                .orderBy("suspendedEnd", "desc") 
-                .limit(1);
-
-            // ตรวจสอบข้อมูลใน suspended
-            const suspendedDoc = await suspendedDocRef.get();
-            const userDoc = await userDocRef.get();
-
-            let isSuspended = false;
-            let suspendedEndDate = null;
-            let reason = "";
-
-            if (!suspendedDoc.empty) {
-                const suspendedData = suspendedDoc.docs[0].data(); // ดึงเอกสารแรก
-                if (suspendedData && suspendedData.suspendedEnd) {
-                    suspendedEndDate = suspendedData.suspendedEnd.toDate();
-                    const currentDate = new Date();
-                    if (currentDate > suspendedEndDate) {
-                        // await userDocRef.set({ status: true }, { merge: true }); // เพิ่ม merge เพื่อไม่ให้เขียนทับข้อมูลอื่น
-                    } else {
-                        isSuspended = true;
-                        reason = suspendedData.reason;
-                    }
-                }
-            } else {
-                isSuspended = false;
-            }
-
-            // if (isSuspended || (userDoc.exists && !userDoc.data().status)) {
-            if (isSuspended) {
-                await auth().signOut();
-
-                console.log("TEST SUSPENDED 2")
-
-                Alert.alert(
-                    "บัญชีถูกระงับ",
-                    suspendedEndDate
-                        ? `บัญชีของคุณถูกระงับจนถึง ${suspendedEndDate.toLocaleString()} เหตุผล: ${reason}`
-                        : "บัญชีของคุณถูกระงับ กรุณาติดต่อผู้ดูแลระบบ",
-                    [{ text: "ตกลง" }]
-                );
-                return;
-            }
+            
+            await auth().signInWithCredential(facebookCredential);
         } catch (error) {
             if (error.code === "auth/account-exists-with-different-credential") {
                 Alert.alert(

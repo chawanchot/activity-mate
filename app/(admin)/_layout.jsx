@@ -1,13 +1,18 @@
-import { Stack } from "expo-router";
+import { Stack, router } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { TouchableOpacity, Alert } from "react-native";
 import auth from "@react-native-firebase/auth";
-import { router } from "expo-router";
 import { useAuth } from "../../contexts/AuthContext";
 import { useEffect } from "react";
 
 export default function AdminLayout() {
-    const { loggedIn } = useAuth();
+    const { loggedIn, isSuspended, isLoading } = useAuth();
+
+    useEffect(() => {
+        if (!isLoading && isSuspended && loggedIn) {
+            router.replace("/accountSuspended");
+        }
+    }, [isSuspended, isLoading]);
 
     const logout = () => {
         Alert.alert("แจ้งเตือน", "ยืนยันการออกจากระบบ", [

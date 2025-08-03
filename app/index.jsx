@@ -10,16 +10,13 @@ export default function Index() {
     const { isLoading, loggedIn, user } = useAuth();
 
     useEffect(() => {
-        // ถ้าโหลดข้อมูลเสร็จแล้ว ให้ตรวจสอบเงื่อนไข
         if (!isLoading) {
+            // รอ layout mount ให้เสร็จก่อน
             if (!loggedIn) {
-                // ถ้ายังไม่ได้ล็อกอิน ให้เปลี่ยนไปที่หน้า login
                 router.replace("/login");
-            } else if (user.role === "admin") {
-                // admin ให้เปลี่ยนไปที่หน้า dashboard ของ admin
+            } else if (user?.role === "admin") {
                 router.replace("/(admin)/home");
             } else {
-                // user ให้ไปที่หน้า home ของแอป
                 router.replace("/(tabs)/home");
             }
         }

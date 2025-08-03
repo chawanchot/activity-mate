@@ -1,8 +1,17 @@
-import React from "react";
-import { Tabs } from "expo-router";
+import React, { useEffect } from "react";
+import { useAuth } from "../../contexts/AuthContext";
+import { Tabs, router } from "expo-router";
 import { MaterialIcons, AntDesign } from "@expo/vector-icons";
 
 export default function TabLayout() {
+    const { isSuspended, isLoading, loggedIn } = useAuth();
+
+    useEffect(() => {
+        if (!isLoading && isSuspended && loggedIn) {
+            router.replace("/accountSuspended");
+        }
+    }, [isSuspended, isLoading]);
+
     return (
         <Tabs
             screenOptions={{

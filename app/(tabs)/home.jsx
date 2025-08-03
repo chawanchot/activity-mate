@@ -8,6 +8,8 @@ import {
     Alert,
     ActivityIndicator,
     RefreshControl,
+    Modal,
+    Pressable,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -23,10 +25,12 @@ export default function MemberHome() {
     const [tab, setTab] = useState("owner");
     const [isLoading, setIsLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [menuVisible, setMenuVisible] = useState(false);
 
     const [activityList, setActivityList] = useState([]);
 
     const logout = () => {
+        setMenuVisible(false);
         Alert.alert("แจ้งเตือน", "ยืนยันการออกจากระบบ", [
             {
                 text: "ยกเลิก",
@@ -287,7 +291,7 @@ export default function MemberHome() {
     useEffect(() => {
         if (!loggedIn) {
             router.replace("/login");
-        }
+        } 
     }, [loggedIn]);
 
     if (!user) {
@@ -308,22 +312,6 @@ export default function MemberHome() {
                     <View style={{ marginTop: 10 }}>
                         {/* ชื่อผู้ใช้ */}
                         <Text style={styles.username}>{user.username}</Text>
-                        <View style={styles.buttonContainer}>
-                            {/* ปุ่มแก้ไขข้อมูล */}
-                            <TouchableOpacity
-                                onPress={() => router.push("/editProfile")}
-                            >
-                                <Text style={styles.profileEditBtn}>
-                                    แก้ไขข้อมูล
-                                </Text>
-                            </TouchableOpacity>
-                            {/* ปุ่มออกจากระบบ */}
-                            <TouchableOpacity onPress={logout}>
-                                <Text style={styles.profileLogoutBtn}>
-                                    ออกจากระบบ
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
                     </View>
                 </View>
 
@@ -532,6 +520,33 @@ export default function MemberHome() {
                     />
                 )}
             </View>
+
+            {/* ✅ ปุ่มเมนู 3 จุด ลอยอยู่ขวาบน ไม่ดันอะไรลง */}
+            <TouchableOpacity
+                style={styles.floatingMenuButton}
+                onPress={() => setMenuVisible(true)}
+            >
+                <MaterialIcons name="more-vert" size={28} color="black" />
+            </TouchableOpacity>
+
+            {/* ✅ Modal Dropdown Menu (เหมือนเดิม) */}
+            <Modal
+                transparent
+                animationType="fade"
+                visible={menuVisible}
+                onRequestClose={() => setMenuVisible(false)}
+            >
+                <Pressable style={styles.modalOverlay} onPress={() => setMenuVisible(false)} activeOpacity={0.8}>
+                    <View style={styles.menuContainer}>
+                        <TouchableOpacity onPress={() => { router.push('/editProfile'); setMenuVisible(false); }}>
+                            <Text style={styles.menuItem}>แก้ไขข้อมูล</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={logout}>
+                            <Text style={[styles.menuItem, { color: 'red' }]}>ออกจากระบบ</Text>
+                        </TouchableOpacity>
+                    </View>
+                </Pressable>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -541,6 +556,38 @@ const styles = StyleSheet.create({
         height: "100%",
         backgroundColor: "white",
         paddingTop: 18,
+    },
+    floatingMenuButton: {
+        position: 'absolute',
+        top: 10,
+        right: 16,
+        zIndex: 1000,
+        padding: 8,
+    },
+    modalOverlay: {
+        flex: 1,
+        // backgroundColor: 'rgba(0,0,0,0.2)',
+        justifyContent: 'flex-start',
+        alignItems: 'flex-end',
+        paddingTop: 60,
+        paddingRight: 16,
+    },
+    menuContainer: {
+        backgroundColor: 'white',
+        borderRadius: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 6,
+        width: 150,
+    },
+    menuItem: {
+        paddingVertical: 12,
+        paddingHorizontal: 14,
+        fontFamily: "Kanit_400Regular",
+        fontSize: 14,
+        color: '#333',
     },
     headerContainer: {
         alignItems: "center",
@@ -552,19 +599,9 @@ const styles = StyleSheet.create({
         fontFamily: "Kanit_600SemiBold",
         fontSize: 22,
     },
-    buttonContainer: {
-        flexDirection: "row",
-        justifyContent: "center",
-        gap: 50,
-        marginTop: 10,
-    },
     profileEditBtn: {
         fontFamily: "Kanit_600SemiBold",
         color: "blue",
-    },
-    profileLogoutBtn: {
-        fontFamily: "Kanit_600SemiBold",
-        color: "red",
     },
     tabContainer: {
         flexDirection: "row",
