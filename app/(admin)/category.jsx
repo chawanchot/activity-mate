@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import firestore from "@react-native-firebase/firestore";
+import ColorPicker, { Panel3 } from 'reanimated-color-picker';
 
 export default function Category() {
     const [showAddModal, setShowAddModal] = useState(false);
@@ -20,8 +21,11 @@ export default function Category() {
     const [refreshing, setRefreshing] = useState(false);
     const [category, setCategory] = useState([]);
     const [addInput, setAddInput] = useState("");
+    const [addColor, setAddColor] = useState('#ff0c00');
     const [editInput, setEditInput] = useState("");
     const [editId, setEditId] = useState(null);
+    const [editColor, setEditColor] = useState("");
+    const [oldColor, setOldColor] = useState("");
 
     // ฟังก์ชันดึงข้อมูลหมวดหมู่จาก Firestore
     const getCategoryData = async () => {
@@ -32,11 +36,12 @@ export default function Category() {
 
             const Arr = [];
             querySnapshot.forEach((res) => {
-                const { name, status } = res.data();
+                const { name, status, color } = res.data();
                 Arr.push({
                     id: res.id,
                     name,
                     status,
+                    color,
                 });
             });
 
@@ -70,10 +75,12 @@ export default function Category() {
                     await firestore().collection("category").add({
                         name: addInput,
                         status: true,
+                        color: addColor,
                     });
 
                     setAddInput("");
                     setShowAddModal(false);
+                    setAddColor("#ff0c00")
                     getCategoryData(); // รีเฟรชข้อมูลหลังเพิ่ม
                 }
             } catch (error) {
@@ -89,9 +96,11 @@ export default function Category() {
     };
 
     // ฟังก์ชันเปิด modal แก้ไขหมวดหมู่
-    const openEditModal = (id, name) => {
+    const openEditModal = (id, name, color) => {
         setEditInput(name);
         setEditId(id);
+        setEditColor(color);
+        setOldColor(color);
         setShowEditModal(true);
     };
 
@@ -105,17 +114,32 @@ export default function Category() {
                     .get();
 
                 if (!querySnapshot.empty) {
-                    Alert.alert("แจ้งเตือน", "หมวดหมู่นี้มีอยู่แล้ว", [
-                        {
-                            text: "ตกลง",
-                        },
-                    ]);
+                    if (oldColor == editColor) {
+                        Alert.alert("แจ้งเตือน", "หมวดหมู่นี้มีอยู่แล้ว", [
+                            {
+                                text: "ตกลง",
+                            },
+                        ]);
+                    } else {
+                        await firestore().collection("category").doc(editId).update({
+                            name: editInput,
+                            color: editColor,
+                        });
+
+                        setShowEditModal(false);
+                        setEditColor("");
+                        setOldColor("");
+                        getCategoryData(); // รีเฟรชข้อมูลหลังแก้ไข
+                    }
                 } else {
                     await firestore().collection("category").doc(editId).update({
                         name: editInput,
+                        color: editColor,
                     });
 
                     setShowEditModal(false);
+                    setEditColor("");
+                    setOldColor("");
                     getCategoryData(); // รีเฟรชข้อมูลหลังแก้ไข
                 }
             } catch (error) {
@@ -222,7 +246,7 @@ export default function Category() {
                                 <TouchableOpacity
                                     activeOpacity={0.8}
                                     onPress={() =>
-                                        openEditModal(item.id, item.name)
+                                        openEditModal(item.id, item.name, item.color)
                                     }
                                     style={[styles.manageBtn, { backgroundColor: "#FFC300" }]}
                                 >
@@ -266,10 +290,6 @@ export default function Category() {
                 animationType="slide"
                 transparent={true}
                 visible={showAddModal}
-                onRequestClose={() => {
-                    Alert.alert("Modal has been closed.");
-                    setShowAddModal(!showAddModal);
-                }}
             >
                 <View style={styles.modalContainer}>
                     <View style={styles.modalContent}>
@@ -278,7 +298,11 @@ export default function Category() {
                         </Text>
                         <TouchableOpacity
                             activeOpacity={0.8}
-                            onPress={() => setShowAddModal(false)}
+                            onPress={() => {
+                                setShowAddModal(false);
+                                setAddColor("#ff0c00");
+                                setAddInput("");
+                            }}
                             style={styles.modalCloseIcon}
                         >
                             <MaterialIcons
@@ -296,6 +320,18 @@ export default function Category() {
                                 value={addInput}
                                 onChangeText={setAddInput}
                             />
+                        </View>
+                        <Text style={styles.ModalLabel}>เลือกสี</Text>
+                        <View style={{ width: '100%', alignItems: 'center' }}>
+                            <ColorPicker style={{ width: '50%' }} value='red' onComplete={(color) => setAddColor(color.hex)}>
+                                <Panel3 />
+                            </ColorPicker>
+                        </View>
+                        <Text style={styles.ModalLabel}>ตัวอย่าง</Text>
+                        <View>
+                            <Text style={[styles.activityCategory, { backgroundColor: addColor }]}>
+                                {addInput || "หมวดหมู่"}
+                            </Text>
                         </View>
                         <View style={styles.modalFooter}>
                             <TouchableOpacity
@@ -317,10 +353,6 @@ export default function Category() {
                 animationType="slide"
                 transparent={true}
                 visible={showEditModal}
-                onRequestClose={() => {
-                    Alert.alert("Modal has been closed.");
-                    setShowEditModal(!showEditModal);
-                }}
             >
                 <View style={styles.modalContainer}>
                     <View style={styles.modalContent}>
@@ -329,7 +361,11 @@ export default function Category() {
                         </Text>
                         <TouchableOpacity
                             activeOpacity={0.8}
-                            onPress={() => setShowEditModal(false)}
+                            onPress={() => {
+                                setShowEditModal(false);
+                                setEditColor("");
+                                setOldColor("");
+                            }}
                             style={styles.modalCloseIcon}
                         >
                             <MaterialIcons name="close" size={24} color="black" />
@@ -343,6 +379,18 @@ export default function Category() {
                                 value={editInput}
                                 onChangeText={setEditInput}
                             />
+                        </View>
+                        <Text style={styles.ModalLabel}>เลือกสี</Text>
+                        <View style={{ width: '100%', alignItems: 'center' }}>
+                            <ColorPicker style={{ width: '50%' }} value={editColor} onComplete={(color) => setEditColor(color.hex)}>
+                                <Panel3 />
+                            </ColorPicker>
+                        </View>
+                        <Text style={styles.ModalLabel}>ตัวอย่าง</Text>
+                        <View>
+                            <Text style={[styles.activityCategory, { backgroundColor: editColor }]}>
+                                {editInput || "หมวดหมู่"}
+                            </Text>
                         </View>
                         <View style={styles.modalFooter}>
                             <TouchableOpacity
@@ -434,6 +482,13 @@ const styles = StyleSheet.create({
         fontFamily: "Kanit_600SemiBold",
         fontSize: 16
     },
+    ModalLabel: {
+        marginTop: 10,
+        fontFamily: "Kanit_600SemiBold",
+        fontSize: 16,
+        textAlign: "center",
+        width: "100%"
+    },
     modalCloseIcon: {
         position: "absolute",
         top: 10,
@@ -472,5 +527,15 @@ const styles = StyleSheet.create({
     modalBtnText: {
         color: "white",
         fontFamily: "Kanit_600SemiBold"
-    }
+    },
+    activityCategory: {
+        marginTop: 5,
+        fontSize: 14,
+        color: "white",
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 10,
+        fontFamily: "Kanit_600SemiBold",
+        backgroundColor: "#ff0c00",
+    },
 });

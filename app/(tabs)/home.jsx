@@ -96,6 +96,7 @@ export default function MemberHome() {
                     id: doc.id,
                     name: data.name,
                     category: category.name,
+                    categoryColor: category.color,
                     description: data.description,
                     max: data.max,
                     status: data.status,
@@ -209,6 +210,7 @@ export default function MemberHome() {
                     id: data.activityID,
                     name: activityData.name,
                     category: category.name,
+                    categoryColor: category.color,
                     description: activityData.description,
                     max: activityData.max,
                     status: activityData.status,
@@ -478,9 +480,7 @@ export default function MemberHome() {
                                         </Text>
 
                                         <View style={styles.activityFooter}>
-                                            <Text
-                                                style={styles.activityCategory}
-                                            >
+                                            <Text style={[styles.activityCategory, { backgroundColor: item.categoryColor }]}>
                                                 {item.category}
                                             </Text>
 

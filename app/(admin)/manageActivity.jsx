@@ -105,6 +105,7 @@ export default function ManageActivity() {
                         id: doc.id,
                         name: data.name,
                         category: category.name,
+                        categoryColor: category.color,
                         description: data.description,
                         max: data.max,
                         locationName: data.locationName,
@@ -342,7 +343,7 @@ export default function ManageActivity() {
 
                                     <View style={styles.activityFooter}>
                                         {/* หมวดหมู่ */}
-                                        <Text style={styles.activityCategory}>
+                                        <Text style={[styles.activityCategory, { backgroundColor: item.categoryColor }]}>
                                             {item.category}
                                         </Text>
 
