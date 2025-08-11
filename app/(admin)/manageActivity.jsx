@@ -14,54 +14,110 @@ import { MaterialIcons, FontAwesome5, AntDesign } from "@expo/vector-icons";
 import DropDownPicker from "react-native-dropdown-picker";
 import firestore from "@react-native-firebase/firestore";
 import { router, useLocalSearchParams } from "expo-router";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 export default function ManageActivity() {
     const params = useLocalSearchParams();
 
     const [open, setOpen] = useState(false);
+    const [openStatus, setOpenStatus] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [showFromPicker, setShowFromPicker] = useState(false);
+    const [showToPicker, setShowToPicker] = useState(false);
 
     const [categories, setCategories] = useState([]);
     const [activityList, setActivityList] = useState([]);
 
+    // เริ่มต้นเป็นวันแรกของเดือนปัจจุบัน
+    const [startFrom, setStartFrom] = useState(() => {
+        const today = new Date();
+        return new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0, 0);
+    });
+
+    // สิ้นสุดเป็นวันสุดท้ายของเดือนปัจจุบัน
+    const [startTo, setStartTo] = useState(() => {
+        const today = new Date();
+        return new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
+    });
+
     const [selectedCategory, setSelectedCategory] = useState("all");
+    const [selectedStatus, setSelectedStatus] = useState("all");
     const [search, setSearch] = useState("");
     const [searchProvice, setSearchProvice] = useState("");
     const [searchDistrict, setSearchDistrict] = useState("");
     const [searchSubDistrict, setSearchSubDistrict] = useState("");
 
+    // ให้เป็นต้นวัน/ท้ายวันตาม local time (เอาไว้สร้าง Timestamp ช่วงวัน)
+    const startOfDay = (d) =>
+        new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+    const endOfDay = (d) =>
+        new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+
+    // กันกรณีเลือก From > To
+    const ensureValidRange = (from, to) => {
+        if (from && to && from > to) {
+            // ถ้า From เกิน To ให้สลับ
+            return [to, from];
+        }
+        return [from, to];
+    };
+
     const getActivity = async () => {
         setIsLoading(true);
         try {
-
-            // วันที่ปัจจุบันในรูปแบบ Firestore Timestamp
-            const currentDate = firestore.Timestamp.fromDate(new Date());
-
             let query = firestore()
-                .collection("activities")
-                .where("status", "in", ["ongoing", "cancel"])
-                .where("startDate", ">", currentDate)
-                .orderBy("startDate", "asc");
+                .collection("activities");
+
+            if (selectedStatus !== "all") {
+                query = query.where("status", "==", selectedStatus);
+            } else {
+                query = query.where("status", "in", [
+                    "ongoing",
+                    "cancel",
+                    "success",
+                ]);
+            }
 
             if (selectedCategory !== "all") {
                 query = query.where("categoryID", "==", selectedCategory);
             }
 
+            if (startFrom) {
+                query = query.where(
+                    "startDate", ">=", firestore.Timestamp.fromDate(startOfDay(startFrom))
+                );
+            }
+
+            if (startTo) {
+                query = query.where(
+                    "startDate", "<=", firestore.Timestamp.fromDate(endOfDay(startTo))
+                );
+            }
+
             if (searchProvice) {
-                query = query.where("provice", "==", searchProvice)
+                query = query.where("provice", "==", searchProvice);
             }
 
             if (searchDistrict) {
-                let search = searchProvice !== "กรุงเทพมหานคร" ? "อำเภอ" + searchDistrict : searchDistrict;
-                query = query.where("district", "==", search)
+                let search =
+                    searchProvice !== "กรุงเทพมหานคร"
+                        ? "อำเภอ" + searchDistrict
+                        : searchDistrict;
+                query = query.where("district", "==", search);
             }
 
             if (searchSubDistrict) {
-                let prefix = searchProvice !== "กรุงเทพมหานคร" ? "ตำบล" : "แขวง";
-                query = query.where("subDistrict", "==", prefix + searchSubDistrict)
+                let prefix =
+                    searchProvice !== "กรุงเทพมหานคร" ? "ตำบล" : "แขวง";
+                query = query.where(
+                    "subDistrict",
+                    "==",
+                    prefix + searchSubDistrict
+                );
             }
 
+            query.orderBy("startDate", "asc");
             const fetchActivity = await query.get();
 
             const dataActivity = [];
@@ -100,7 +156,9 @@ export default function ManageActivity() {
 
                 const allRegistrationsData = allRegistrations.docs;
 
-                if (data.name.toLowerCase().includes(search.toLocaleLowerCase())) {
+                if (
+                    data.name.toLowerCase().includes(search.toLocaleLowerCase())
+                ) {
                     dataActivity.push({
                         id: doc.id,
                         name: data.name,
@@ -136,7 +194,7 @@ export default function ManageActivity() {
         setSearchProvice(params.provice);
         setSearchDistrict(params.district);
         setSearchSubDistrict(params.subdistrict);
-    }, [params.provice, params.district, params.subdistrict]);    
+    }, [params.provice, params.district, params.subdistrict]);
 
     useEffect(() => {
         getActivity();
@@ -169,43 +227,62 @@ export default function ManageActivity() {
         <SafeAreaView style={{ flex: 1 }}>
             <View style={styles.container}>
                 <View style={{ paddingHorizontal: 10 }}>
-                    {/* ชื่อกิจกรรม */}
-                    <Text style={styles.label}>ชื่อกิจกรรม</Text>
-                    <View style={styles.inputContainer}>
-                        <MaterialIcons
-                            name="search"
-                            size={24}
-                            color="#A6A6A6"
-                        />
-                        <TextInput style={styles.input} onChangeText={setSearch} />
-                    </View>
-
-                    {/* สถานที่และหมวดหมู่ */}
+                    {/* แถว: ชื่อกิจกรรม + สถานที่ */}
                     <View style={{ flexDirection: "row", gap: 10 }}>
-                        {/* สถานที่ */}
+                        {/* คอลัมน์: ชื่อกิจกรรม */}
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.label}>ชื่อกิจกรรม</Text>
+                            <View style={styles.inputContainer}>
+                                <MaterialIcons
+                                    name="search"
+                                    size={24}
+                                    color="#A6A6A6"
+                                />
+                                <TextInput
+                                    style={styles.input}
+                                    value={search}
+                                    onChangeText={setSearch}
+                                />
+                            </View>
+                        </View>
+
+                        {/* คอลัมน์: สถานที่ */}
                         <View style={{ flex: 1 }}>
                             <Text style={styles.label}>สถานที่</Text>
                             <TouchableOpacity
                                 activeOpacity={0.8}
-                                style={[styles.inputContainer, { flex: 1 }]}
-                                onPress={() => router.push({
-                                    pathname: "/searchEventLocation",
-                                    params: {
-                                        backRoute: "/manageActivity"
-                                    }
-                                })}
+                                style={styles.inputContainer}
+                                onPress={() =>
+                                    router.push({
+                                        pathname: "/searchEventLocation",
+                                        params: {
+                                            backRoute: "/manageActivity",
+                                        },
+                                    })
+                                }
                             >
                                 <MaterialIcons
                                     name="location-on"
                                     size={24}
                                     color="#A6A6A6"
                                 />
-                                <Text style={styles.placeText} numberOfLines={1}>
-                                    {searchProvice} {searchDistrict} {searchSubDistrict}
+                                <Text
+                                    style={[
+                                        styles.placeText,
+                                        { flex: 1, marginLeft: 10 },
+                                    ]}
+                                    numberOfLines={1}
+                                    ellipsizeMode="tail"
+                                >
+                                    {searchProvice} {searchDistrict}{" "}
+                                    {searchSubDistrict}
                                 </Text>
                             </TouchableOpacity>
                         </View>
+                    </View>
 
+                    {/* หมวดหมู่และสถานะ */}
+                    <View style={{ flexDirection: "row", gap: 10 }}>
                         {/* หมวดหมู่ */}
                         <View style={{ flex: 1 }}>
                             <Text style={styles.label}>หมวดหมู่</Text>
@@ -254,8 +331,157 @@ export default function ManageActivity() {
                                 />
                             </View>
                         </View>
+
+                        {/* สถานะ */}
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.label}>สถานะ</Text>
+                            <View style={styles.inputContainer}>
+                                <AntDesign
+                                    name="tags"
+                                    size={16}
+                                    color="#A6A6A6"
+                                />
+                                <DropDownPicker
+                                    open={openStatus}
+                                    value={selectedStatus}
+                                    items={[
+                                        { label: "ทั้งหมด", value: "all" },
+                                        {
+                                            label: "ดำเนินการ",
+                                            value: "ongoing",
+                                        },
+                                        {
+                                            label: "สิ้นสุด",
+                                            value: "success",
+                                        },
+                                        { label: "ยกเลิก", value: "cancel" },
+                                    ]}
+                                    setOpen={setOpenStatus}
+                                    setValue={setSelectedStatus}
+                                    placeholder=""
+                                    style={{
+                                        backgroundColor: "#FFF5F5",
+                                        borderWidth: 0,
+                                        flex: 1,
+                                    }}
+                                    dropDownContainerStyle={{
+                                        backgroundColor: "#FFF5F5",
+                                    }}
+                                    labelStyle={{
+                                        fontFamily: "Kanit_400Regular",
+                                        fontSize: 18,
+                                        color: "black",
+                                    }}
+                                    zIndex={2000}
+                                    zIndexInverse={2000}
+                                />
+                            </View>
+                        </View>
                     </View>
-                    <TouchableOpacity style={styles.button} onPress={getActivity}>
+
+                    {/* ช่วงวันที่เริ่มกิจกรรม */}
+                    <View style={{ marginTop: 10 }}>
+                        <Text style={styles.label}>ช่วงวันที่เริ่มกิจกรรม</Text>
+                        <View style={{ flexDirection: "row", gap: 10 }}>
+                            {/* From */}
+                            <View style={{ flex: 1 }}>
+                                <TouchableOpacity
+                                    activeOpacity={0.8}
+                                    style={styles.inputContainer}
+                                    onPress={() => setShowFromPicker(true)}
+                                >
+                                    <MaterialIcons
+                                        name="event"
+                                        size={22}
+                                        color="#A6A6A6"
+                                    />
+                                    <Text
+                                        style={[
+                                            styles.placeText,
+                                            { marginLeft: 10 },
+                                        ]}
+                                    >
+                                        {startFrom.toLocaleDateString("th-TH", {
+                                            day: "2-digit",
+                                            month: "short",
+                                            year: "numeric",
+                                        })}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+
+                            {/* To */}
+                            <View style={{ flex: 1 }}>
+                                <TouchableOpacity
+                                    activeOpacity={0.8}
+                                    style={styles.inputContainer}
+                                    onPress={() => setShowToPicker(true)}
+                                >
+                                    <MaterialIcons
+                                        name="event"
+                                        size={22}
+                                        color="#A6A6A6"
+                                    />
+                                    <Text
+                                        style={[
+                                            styles.placeText,
+                                            { marginLeft: 10 },
+                                        ]}
+                                    >
+                                        {startTo.toLocaleDateString("th-TH", {
+                                            day: "2-digit",
+                                            month: "short",
+                                            year: "numeric",
+                                        })}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+
+                        {/* From Picker */}
+                        {showFromPicker && (
+                            <DateTimePicker
+                                value={startFrom || new Date()}
+                                mode="date"
+                                display="default"
+                                onChange={(_, date) => {
+                                    setShowFromPicker(false);
+                                    if (date) {
+                                        const [f, t] = ensureValidRange(
+                                            date,
+                                            startTo
+                                        );
+                                        setStartFrom(f);
+                                        setStartTo(t);
+                                    }
+                                }}
+                            />
+                        )}
+
+                        {/* To Picker */}
+                        {showToPicker && (
+                            <DateTimePicker
+                                value={startTo || new Date()}
+                                mode="date"
+                                display="default"
+                                onChange={(_, date) => {
+                                    setShowToPicker(false);
+                                    if (date) {
+                                        const [f, t] = ensureValidRange(
+                                            startFrom,
+                                            date
+                                        );
+                                        setStartFrom(f);
+                                        setStartTo(t);
+                                    }
+                                }}
+                            />
+                        )}
+                    </View>
+                    <TouchableOpacity
+                        style={styles.button}
+                        onPress={getActivity}
+                    >
                         <Text style={styles.buttonText}>ค้นหา</Text>
                     </TouchableOpacity>
                 </View>
@@ -296,7 +522,9 @@ export default function ManageActivity() {
                                     {/* ข้อความกิจกรรมถูกยกเลิก */}
                                     {item.status === "cancel" && (
                                         <View style={styles.overlay}>
-                                            <Text style={styles.cancelText}>กิจกรรมถูกยกเลิก</Text>
+                                            <Text style={styles.cancelText}>
+                                                กิจกรรมถูกยกเลิก
+                                            </Text>
                                         </View>
                                     )}
 
@@ -343,7 +571,15 @@ export default function ManageActivity() {
 
                                     <View style={styles.activityFooter}>
                                         {/* หมวดหมู่ */}
-                                        <Text style={[styles.activityCategory, { backgroundColor: item.categoryColor }]}>
+                                        <Text
+                                            style={[
+                                                styles.activityCategory,
+                                                {
+                                                    backgroundColor:
+                                                        item.categoryColor,
+                                                },
+                                            ]}
+                                        >
                                             {item.category}
                                         </Text>
 

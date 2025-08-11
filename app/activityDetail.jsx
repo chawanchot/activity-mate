@@ -27,7 +27,7 @@ import DropDownPicker from "react-native-dropdown-picker";
 
 export default function ActivityDetail() {
     const params = useLocalSearchParams();
-    const { user } = useAuth();
+    const { user, page } = useAuth();
     const [refreshing, setRefreshing] = useState(false);
     const [activity, setActivity] = useState(null);
     const [registed, setRegisted] = useState(false);
@@ -190,7 +190,7 @@ export default function ActivityDetail() {
                         .doc(params.id)
                         .update({ status: "cancel" })
                         .then(() => {
-                            if (user.role === "admin") {
+                            if (page === "admin") {
                                 getActivityData();
                             } else {
                                 router.replace("/(tabs)/home");
@@ -553,7 +553,7 @@ export default function ActivityDetail() {
                     </View>
 
                     {/* ปุ่ม */}
-                    {user.role === "admin" && (
+                    {page === "admin" && (
                         <View style={{ marginBottom: 10, marginTop: 50 }}>
                             {activity.status === "ongoing" ? (
                                 <TouchableOpacity
@@ -584,7 +584,7 @@ export default function ActivityDetail() {
                             )}
                         </View>
                     )}
-                    {user.role !== "admin" && (
+                    {page === "member" && (
                         <>
                             {activity.status === "ongoing" ? (
                                 <View

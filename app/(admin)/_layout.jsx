@@ -1,7 +1,4 @@
 import { Stack, router } from "expo-router";
-import { MaterialIcons } from "@expo/vector-icons";
-import { TouchableOpacity, Alert } from "react-native";
-import auth from "@react-native-firebase/auth";
 import { useAuth } from "../../contexts/AuthContext";
 import { useEffect } from "react";
 
@@ -14,23 +11,6 @@ export default function AdminLayout() {
         }
     }, [isSuspended, isLoading]);
 
-    const logout = () => {
-        Alert.alert("แจ้งเตือน", "ยืนยันการออกจากระบบ", [
-            {
-                text: "ยกเลิก",
-            },
-            {
-                text: "ยืนยัน",
-                onPress: () =>
-                    auth()
-                        .signOut()
-                        .catch((error) =>
-                            console.log("Error signing out: ", error)
-                        ),
-            },
-        ]);
-    };
-
     useEffect(() => {
         if (!loggedIn) {
             router.replace("/login");
@@ -42,18 +22,9 @@ export default function AdminLayout() {
             <Stack.Screen
                 name="home"
                 options={{
-                    headerShown: true,
+                    headerShown: false,
                     headerTitle: "",
                     headerShadowVisible: false,
-                    headerRight: () => (
-                        <TouchableOpacity onPress={logout}>
-                            <MaterialIcons
-                                name="logout"
-                                size={30}
-                                color="red"
-                            />
-                        </TouchableOpacity>
-                    ),
                 }}
             />
             <Stack.Screen

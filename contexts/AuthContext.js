@@ -1,8 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from "react";
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
-import { Alert } from "react-native";
-import { router } from "expo-router";
 
 const AuthContext = createContext();
 
@@ -11,6 +9,8 @@ export const AuthProvider = ({ children }) => {
     const [loggedIn, setLoggedIn] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [isSuspended, setIsSuspended] = useState(false);
+
+    const [page, setPage] = useState("member");
 
     // 🔁 เก็บ unsubscribe สำหรับ realtime listeners
     const userUnsubscribeRef = useRef(null);
@@ -43,6 +43,12 @@ export const AuthProvider = ({ children }) => {
                                     const userData = { uid: data.uid, ...doc.data() };
                                     setUser(userData);
                                     setLoggedIn(true);
+
+                                    if (userData.role === "admin") {
+                                        setPage("admin");
+                                    } else {
+                                        setPage("member");
+                                    }
                                 } else {
                                     // ➕ สร้างผู้ใช้ใหม่ถ้ายังไม่มีใน Firestore
                                     const newUser = {
@@ -56,6 +62,12 @@ export const AuthProvider = ({ children }) => {
                                         .collection("users")
                                         .doc(data.uid)
                                         .set(newUser);
+
+                                    if (newUser.role === "admin") {
+                                        setPage("admin");
+                                    } else {
+                                        setPage("member");
+                                    }
 
                                     setUser({ uid: data.uid, ...newUser });
                                     setLoggedIn(true);
@@ -133,7 +145,7 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     return (
-        <AuthContext.Provider value={{ user, setUser, isLoading, loggedIn, isSuspended }}>
+        <AuthContext.Provider value={{ user, setUser, isLoading, loggedIn, isSuspended, page, setPage }}>
             {children}
         </AuthContext.Provider>
     );

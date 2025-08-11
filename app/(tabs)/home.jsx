@@ -20,7 +20,7 @@ import { router } from "expo-router";
 import auth from "@react-native-firebase/auth";
 
 export default function MemberHome() {
-    const { user, loggedIn } = useAuth();
+    const { user, loggedIn, page, setPage } = useAuth();
 
     const [tab, setTab] = useState("owner");
     const [isLoading, setIsLoading] = useState(true);
@@ -538,7 +538,19 @@ export default function MemberHome() {
             >
                 <Pressable style={styles.modalOverlay} onPress={() => setMenuVisible(false)} activeOpacity={0.8}>
                     <View style={styles.menuContainer}>
-                        <TouchableOpacity onPress={() => { router.push('/editProfile'); setMenuVisible(false); }}>
+                        {user.role === "admin" && (
+                            <TouchableOpacity onPress={() => { 
+                                router.replace('/(admin)/home'); 
+                                setPage("admin");
+                                setMenuVisible(false); 
+                            }}>
+                                <Text style={styles.menuItem}>สลับไปหน้าแอดมิน</Text>
+                            </TouchableOpacity>
+                        )}
+                        <TouchableOpacity onPress={() => { 
+                            router.push('/editProfile'); 
+                            setMenuVisible(false); 
+                        }}>
                             <Text style={styles.menuItem}>แก้ไขข้อมูล</Text>
                         </TouchableOpacity>
                         <TouchableOpacity onPress={logout}>
