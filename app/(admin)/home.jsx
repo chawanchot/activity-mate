@@ -113,6 +113,19 @@ export default function AdminHome() {
                     />
                     <Text style={styles.buttonText}>ประวัติการระงับบัญชี</Text>
                 </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={styles.button}
+                    onPress={() => router.push("/tickets")}
+                >
+                    <FontAwesome5
+                        name="comment-dots"
+                        size={20}
+                        color="#00b62dff"
+                        style={styles.buttonIcon}
+                    />
+                    <Text style={styles.buttonText}>การติดต่อจากผู้ใช้</Text>
+                </TouchableOpacity>
             </ScrollView>
 
             {/* ✅ ปุ่มเมนู 3 จุด ลอยอยู่ขวาบน ไม่ดันอะไรลง */}

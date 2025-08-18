@@ -61,7 +61,16 @@ export default function AdminLayout() {
                 name="chat"
                 options={{
                     headerShown: false,
-                    headerTitle: "แชทกิจกรรม",
+                    headerTitleAlign: "center",
+                    headerTitleStyle: {
+                        fontFamily: "Kanit_600SemiBold",
+                    },
+                }}
+            />
+            <Stack.Screen
+                name="chatTicket"
+                options={{
+                    headerShown: false,
                     headerTitleAlign: "center",
                     headerTitleStyle: {
                         fontFamily: "Kanit_600SemiBold",
@@ -82,6 +91,16 @@ export default function AdminLayout() {
                 name="suspended"
                 options={{
                     headerTitle: "ประวัติการระงับบัญชี",
+                    headerTitleAlign: "center",
+                    headerTitleStyle: {
+                        fontFamily: "Kanit_600SemiBold",
+                    },
+                }}
+            />
+            <Stack.Screen
+                name="tickets"
+                options={{
+                    headerTitle: "การติดต่อจากผู้ใช้",
                     headerTitleAlign: "center",
                     headerTitleStyle: {
                         fontFamily: "Kanit_600SemiBold",

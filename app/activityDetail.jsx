@@ -32,9 +32,11 @@ export default function ActivityDetail() {
     const [activity, setActivity] = useState(null);
     const [registed, setRegisted] = useState(false);
     const [showModal, setShowModal] = useState(false);
+    const [showModalCancel, setShowModalCancel] = useState(false);
     const [openDropdown, setOpenDropdown] = useState(false);
     const [rating, setRating] = useState("");
     const [comment, setComment] = useState("");
+    const [cancelReason, setCancelReason] = useState("");
     const [showReviewBtn, setShowReviewBtn] = useState(true);
     const [averageOwnerRating, setAverageOwnerRating] = useState(null);
 
@@ -169,6 +171,15 @@ export default function ActivityDetail() {
                 registrations: RegistrationsData,
                 reviews: ReviewsData,
             });
+
+            if (activityData.status === "cancel" && activityData.cancelBy && activityData.cancelReason) {
+                if (activityData.cancelBy === "admin") {
+                    Alert.alert("แจ้งเตือน", "กิจกรรมถูกยกเลิกโดยแอดมิน\nเนื่องจาก: " + activityData.cancelReason, [{ text: "ตกลง" }]);
+                } else {
+                    Alert.alert("แจ้งเตือน", "กิจกรรมถูกยกเลิก\nเนื่องจาก: " + activityData.cancelReason, [{ text: "ตกลง" }]);
+                }
+            }
+
             setRegisted(isRegistered);
             setShowReviewBtn(!hasReviewed);
             setAverageOwnerRating(averageRating);
@@ -178,33 +189,43 @@ export default function ActivityDetail() {
     };
 
     const cancelActivity = async () => {
-        Alert.alert("แจ้งเตือน", "ยืนยันยกเลิกกิจกรรม", [
-            {
-                text: "ยกเลิก",
-            },
-            {
-                text: "ยืนยัน",
-                onPress: () =>
-                    firestore()
-                        .collection("activities")
-                        .doc(params.id)
-                        .update({ status: "cancel" })
-                        .then(() => {
-                            if (page === "admin") {
-                                getActivityData();
-                            } else {
-                                router.replace("/(tabs)/home");
-                            }
-                        })
-                        .catch((error) => {
-                            console.error("Error update cancel status:", error);
-                            Alert.alert(
-                                "เกิดข้อผิดพลาด",
-                                "ไม่สามารถยกเลิกกิจกรรมได้ กรุณาลองใหม่อีกครั้ง"
-                            );
-                        }),
-            },
-        ]);
+        if (cancelReason !== "") {
+            Alert.alert("แจ้งเตือน", "ยืนยันยกเลิกกิจกรรม", [
+                {
+                    text: "ยกเลิก",
+                },
+                {
+                    text: "ยืนยัน",
+                    onPress: () =>
+                        firestore()
+                            .collection("activities")
+                            .doc(params.id)
+                            .update({ 
+                                status: "cancel",
+                                cancelBy: page,
+                                cancelReason: cancelReason
+                            })
+                            .then(() => {
+                                setShowModalCancel(false);
+                                setCancelReason("");
+                                if (page === "admin") {
+                                    getActivityData();
+                                } else {
+                                    router.replace("/(tabs)/home");
+                                }
+                            })
+                            .catch((error) => {
+                                console.error("Error update cancel status:", error);
+                                Alert.alert(
+                                    "เกิดข้อผิดพลาด",
+                                    "ไม่สามารถยกเลิกกิจกรรมได้ กรุณาลองใหม่อีกครั้ง"
+                                );
+                            }),
+                },
+            ]);
+        } else {
+            Alert.alert("แจ้งเตือน", "กรุณากรอกเหตุผลการยกเลิกกิจกรรม", [{ text: "ตกลง" }]);
+        }
     };
 
     const allowActivity = async () => {
@@ -218,7 +239,11 @@ export default function ActivityDetail() {
                     firestore()
                         .collection("activities")
                         .doc(params.id)
-                        .update({ status: "ongoing" })
+                        .update({ 
+                            status: "ongoing",
+                            cancelBy: "",
+                            cancelReason: ""
+                         })
                         .then(() => {
                             getActivityData();
                         })
@@ -558,7 +583,7 @@ export default function ActivityDetail() {
                             {activity.status === "ongoing" ? (
                                 <TouchableOpacity
                                     activeOpacity={0.8}
-                                    onPress={cancelActivity}
+                                    onPress={() => setShowModalCancel(true)}
                                     style={styles.cancelButton}
                                 >
                                     <Text style={styles.buttonText}>
@@ -633,35 +658,26 @@ export default function ActivityDetail() {
                                                     สิ้นสุดกิจกรรม
                                                 </Text>
                                             </TouchableOpacity>
-                                            <View
-                                                style={
-                                                    styles.editCancelButtonContainer
-                                                }
-                                            >
+                                            <View style={styles.editCancelButtonContainer}>
                                                 <TouchableOpacity
                                                     activeOpacity={0.8}
                                                     onPress={() =>
                                                         router.push({
-                                                            pathname:
-                                                                "editActivity",
-                                                            params: {
-                                                                id: params.id,
-                                                            },
+                                                            pathname: "editActivity",
+                                                            params: { id: params.id },
                                                         })
                                                     }
                                                     style={styles.editButton}
                                                 >
                                                     <Text
-                                                        style={
-                                                            styles.buttonText
-                                                        }
+                                                        style={styles.buttonText}
                                                     >
                                                         แก้ไข
                                                     </Text>
                                                 </TouchableOpacity>
                                                 <TouchableOpacity
                                                     activeOpacity={0.8}
-                                                    onPress={cancelActivity}
+                                                    onPress={() => setShowModalCancel(true)}
                                                     style={styles.cancelButton}
                                                 >
                                                     <Text
@@ -765,9 +781,7 @@ export default function ActivityDetail() {
                                                                 styles.reviewButton
                                                             }
                                                             onPress={() =>
-                                                                setShowModal(
-                                                                    true
-                                                                )
+                                                                setShowModal(true)
                                                             }
                                                         >
                                                             <Text
@@ -895,6 +909,58 @@ export default function ActivityDetail() {
                                 activeOpacity={0.8}
                                 style={styles.modalBtn}
                                 onPress={confirmReviews}
+                            >
+                                <Text style={styles.modalBtnText}>ยืนยัน</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Modal ยกเลิกกิจกรรม */}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={showModalCancel}
+                onRequestClose={() => {
+                    setShowModalCancel(!showModalCancel);
+                }}
+            >
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalHeader}>
+                            ยกเลิกกิจกรรม
+                        </Text>
+                        <TouchableOpacity
+                            activeOpacity={0.8}
+                            onPress={() => setShowModalCancel(false)}
+                            style={styles.modalCloseIcon}
+                        >
+                            <MaterialIcons
+                                name="close"
+                                size={24}
+                                color="black"
+                            />
+                        </TouchableOpacity>
+                        <View style={styles.modalInputContainer}>
+                            <MaterialCommunityIcons
+                                name="message-star-outline"
+                                size={24}
+                                color="#A6A6A6"
+                            />
+                            <TextInput
+                                style={styles.modalInput}
+                                placeholder="เหตุผลการยกเลิก"
+                                placeholderTextColor="#A6A6A6"
+                                value={cancelReason}
+                                onChangeText={setCancelReason}
+                            />
+                        </View>
+                        <View style={styles.modalFooter}>
+                            <TouchableOpacity
+                                activeOpacity={0.8}
+                                style={styles.modalBtn}
+                                onPress={cancelActivity}
                             >
                                 <Text style={styles.modalBtnText}>ยืนยัน</Text>
                             </TouchableOpacity>

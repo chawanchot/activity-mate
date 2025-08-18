@@ -80,7 +80,27 @@ function RootNavigation() {
                 name="chat"
                 options={{
                     headerShown: false,
-                    headerTitle: "แชท",
+                    headerTitleAlign: "center",
+                    headerTitleStyle: {
+                        fontFamily: "Kanit_600SemiBold",
+                    },
+                }}
+            />
+            <Stack.Screen
+                name="chatTicket"
+                options={{
+                    headerShown: false,
+                    headerTitleAlign: "center",
+                    headerTitleStyle: {
+                        fontFamily: "Kanit_600SemiBold",
+                    },
+                }}
+            />
+            <Stack.Screen
+                name="userTickets"
+                options={{
+                    headerShown: true,
+                    headerTitle: "กล่องข้อความ",
                     headerTitleAlign: "center",
                     headerTitleStyle: {
                         fontFamily: "Kanit_600SemiBold",
