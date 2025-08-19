@@ -91,12 +91,15 @@ export default function Tickets() {
                 }
                 renderItem={({ item }) => (
                     <TouchableOpacity
-                        activeOpacity={0.8}
+                        activeOpacity={1}
                         onPress={() =>
                             router.push({
                                 pathname: "(admin)/chatTicket",
                                 params: {
                                     ticketID: item.id,
+                                    title: item.title,
+                                    createdAt: item.createdAt,
+                                    username: item.username
                                 },
                             })
                         } 
@@ -137,7 +140,9 @@ const styles = StyleSheet.create({
     listContainer: {
         backgroundColor: "white",
         borderRadius: 10,
-        elevation: 5,
+        borderBottomWidth: 1,
+        borderBottomColor: "gray",
+        // elevation: 5,
         marginBottom: 6,
     },
     listContent: {

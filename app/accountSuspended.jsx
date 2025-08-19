@@ -136,6 +136,7 @@ const AccountSuspended = () => {
             });
 
             setShowModal(false);
+            setHasTicket(true)
             setTitle("");
             setDescription("");
             setDescHeight(100);

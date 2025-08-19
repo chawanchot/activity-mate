@@ -20,9 +20,16 @@ export default function AdminChatTicket() {
 
     const [newMessage, setNewMessage] = useState("");
     const [messageData, setMessageData] = useState([]);
+    const [title, setTitle] = useState("");
+    const [createdAt, setCreatedAt] = useState("");
+    const [username, setUsername] = useState("");
     const flatListRef = useRef(null);
 
     useEffect(() => {
+        setTitle(params.title);
+        setCreatedAt(params.createdAt);
+        setUsername(params.username);
+
         const unsubscribe = firestore()
             .collection("chatTickets")
             .where("ticketID", "==", params.ticketID)
@@ -104,6 +111,13 @@ export default function AdminChatTicket() {
                 </TouchableOpacity>
                 <View style={styles.emptyView} />
             </View>
+            <View style={styles.subject}>
+                <Text style={styles.subjectHeaderTitle}>เรื่อง</Text>
+                <Text style={styles.subjectHeader}>{title}</Text>
+                <Text style={[styles.subjectHeaderTitle, { marginTop: 5 }]}>ผู้ติดต่อ</Text>
+                <Text style={styles.subjectHeader}>{username}</Text>
+                <Text style={styles.dateText}>{createdAt}</Text>
+            </View>
 
             {/* Chat Messages */}
             <FlatList
@@ -181,6 +195,20 @@ const styles = StyleSheet.create({
         alignItems: "center",
         padding: 15,
         backgroundColor: "white",
+    },
+    subject: {
+        flexDirection: "column",
+        paddingHorizontal: 15,
+        paddingVertical: 8,
+        backgroundColor: "white",
+    },
+    subjectHeader: {
+        color: "#000000ff",
+        fontFamily: "Kanit_400Regular",
+    },
+    subjectHeaderTitle: {
+        color: "#727171ff",
+        fontFamily: "Kanit_400Regular",
     },
     backButton: {
         marginRight: 10,
@@ -345,5 +373,12 @@ const styles = StyleSheet.create({
     },
     deletedMessage: {
         backgroundColor: "#e6e3e3",
-    }
+    },
+    dateText: {
+        fontSize: 12,
+        fontFamily: "Kanit_400Regular",
+        position: "absolute",
+        right: 15,
+        top: 5,
+    },
 });

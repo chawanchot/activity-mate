@@ -7,6 +7,7 @@ import {
     TouchableOpacity,
     RefreshControl,
     ActivityIndicator,
+    Image,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -109,6 +110,7 @@ export default function MemberSeachActivity() {
                         provice: data.provice,
                         startDate: formattedDate,
                         registrations: allRegistrationsData.length,
+                        img: data.image,
                     });
                 }
             }
@@ -315,6 +317,14 @@ export default function MemberSeachActivity() {
                                         </Text>
                                     </View>
 
+                                    {/* รูปกิจกรรม */}
+                                    {item.img && (
+                                        <Image
+                                            source={{ uri: item.img }}
+                                            style={styles.activityImage}
+                                        />
+                                    )}
+
                                     {/* ชื่อกิจกรรม */}
                                     <Text style={styles.activityName}>
                                         {item.name}
@@ -420,7 +430,17 @@ const styles = StyleSheet.create({
         elevation: 5,
         marginBottom: 5,
         padding: 8,
-        height: 150,
+        height: 160,
+    },
+    activityImage: {
+        width: 80,
+        height: 80,
+        objectFit: "cover",
+        borderRadius: 15,
+        position: "absolute",
+        top: 35,
+        right: 20,
+        elevation: 5,
     },
     activityHead: {
         color: "#6b7280",
@@ -438,6 +458,7 @@ const styles = StyleSheet.create({
         color: "#57595c",
         fontSize: 14,
         fontFamily: "Kanit_600SemiBold",
+        width: "70%",
     },
     activityFooter: {
         flexDirection: "row",

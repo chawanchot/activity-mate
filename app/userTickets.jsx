@@ -88,6 +88,8 @@ export default function UserTickets() {
                                 pathname: "chatTicket",
                                 params: {
                                     ticketID: item.id,
+                                    title: item.title,
+                                    createdAt: item.createdAt
                                 },
                             })
                         } 
@@ -119,7 +121,9 @@ const styles = StyleSheet.create({
     listContainer: {
         backgroundColor: "white",
         borderRadius: 10,
-        elevation: 5,
+        borderBottomWidth: 1,
+        borderBottomColor: "gray",
+        // elevation: 5,
         marginBottom: 6,
     },
     listContent: {

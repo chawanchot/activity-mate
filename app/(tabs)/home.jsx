@@ -106,6 +106,7 @@ export default function MemberHome() {
                     provice: data.provice,
                     startDate: formattedDate,
                     registrations: allRegistrationsData.length,
+                    img: data.image,
                 });
             }
 
@@ -220,6 +221,7 @@ export default function MemberHome() {
                     provice: activityData.provice,
                     startDate: formattedDate,
                     registrations: allRegistrationsData.length,
+                    img: activityData.image,
                 });
             }
 
@@ -468,6 +470,14 @@ export default function MemberHome() {
                                             </Text>
                                         </View>
 
+                                        {/* รูปกิจกรรม */}
+                                        {item.img && (
+                                            <Image
+                                                source={{ uri: item.img }}
+                                                style={styles.activityImage}
+                                            />
+                                        )}
+
                                         <Text style={styles.activityName}>
                                             {item.name}
                                         </Text>
@@ -547,6 +557,14 @@ export default function MemberHome() {
                                 <Text style={styles.menuItem}>สลับไปหน้าแอดมิน</Text>
                             </TouchableOpacity>
                         )}
+                        <TouchableOpacity onPress={() => {
+                            setMenuVisible(false);
+                            router.push("/userTickets");
+                        }}>
+                            <Text style={[styles.menuItem]}>
+                                กล่องข้อความ
+                            </Text>
+                        </TouchableOpacity>
                         <TouchableOpacity onPress={() => { 
                             router.push('/editProfile'); 
                             setMenuVisible(false); 
@@ -650,9 +668,19 @@ const styles = StyleSheet.create({
         elevation: 5,
         marginBottom: 5,
         padding: 8,
-        height: 150,
+        height: 160,
         position: "relative", // ทำให้ซ้อนทับได้
         overflow: "hidden",
+    },
+    activityImage: {
+        width: 80,
+        height: 80,
+        objectFit: "cover",
+        borderRadius: 15,
+        position: "absolute",
+        top: 35,
+        right: 20,
+        elevation: 5,
     },
     activityHead: {
         color: "#6b7280",
@@ -670,6 +698,7 @@ const styles = StyleSheet.create({
         color: "#57595c",
         fontSize: 14,
         fontFamily: "Kanit_600SemiBold",
+        width: "70%",
     },
     activityFooter: {
         flexDirection: "row",

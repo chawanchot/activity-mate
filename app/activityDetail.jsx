@@ -337,21 +337,31 @@ export default function ActivityDetail() {
 
     const confirmReviews = () => {
         if (comment && rating) {
-            firestore()
-                .collection("reviews")
-                .add({
-                    userID: activity.owner.id,
-                    reviewBy: user.uid,
-                    rating: rating,
-                    comment: comment,
-                    activityID: params.id,
-                })
-                .then(() => {
-                    setShowModal(false);
-                    getActivityData();
-                });
+            Alert.alert("แจ้งเตือน", "ยืนยันการแสดงความคิดเห็นและให้คะแนน", [
+                {
+                    text: "ยกเลิก",
+                },
+                {
+                    text: "ยืนยัน",
+                    onPress: async () => {
+                        firestore()
+                            .collection("reviews")
+                            .add({
+                                userID: activity.owner.id,
+                                reviewBy: user.uid,
+                                rating: rating,
+                                comment: comment,
+                                activityID: params.id,
+                            })
+                            .then(() => {
+                                setShowModal(false);
+                                getActivityData();
+                            });
+                    },
+                },
+            ]);
         } else {
-            Alert.alert("ผิดพลาด", "กรอกข้อมูลให้ครบถ้วน", [
+            Alert.alert("แจ้งเตือน", "กรอกข้อมูลให้ครบถ้วน", [
                 {
                     text: "ตกลง",
                 },
