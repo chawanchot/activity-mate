@@ -120,11 +120,10 @@ const styles = StyleSheet.create({
     },
     listContainer: {
         backgroundColor: "white",
+        padding: 6,
         borderRadius: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: "gray",
-        // elevation: 5,
-        marginBottom: 6,
+        elevation: 5,
+        marginBottom: 6
     },
     listContent: {
         flexDirection: "column",

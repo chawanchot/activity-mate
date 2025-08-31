@@ -236,8 +236,8 @@ export default function Category() {
                 renderItem={({ item }) => (
                     <View style={styles.listContainer}>
                         <View style={styles.listContent}>
-                            <View style={{ width: "75%" }}>
-                                <Text style={styles.name}>
+                            <View style={{ flexShrink: 1 }}>
+                                <Text style={[styles.name, { backgroundColor: item.color }]}>
                                     {item.name}
                                 </Text>
                             </View>
@@ -442,8 +442,15 @@ const styles = StyleSheet.create({
         alignItems: "center"
     },
     name: {
-        fontSize: 18,
-        fontFamily: "Kanit_600SemiBold"
+        fontSize: 15,
+        fontFamily: "Kanit_600SemiBold",
+        color: "white",
+        backgroundColor: "#ef4444",
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 10,
+        fontFamily: "Kanit_600SemiBold",
+        alignSelf: "flex-start",
     },
     buttonContainer: {
         width: "25%",
