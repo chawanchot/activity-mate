@@ -590,32 +590,39 @@ export default function ActivityDetail() {
                     {/* ปุ่ม */}
                     {page === "admin" && (
                         <View style={{ marginBottom: 10, marginTop: 50 }}>
-                            {activity.status === "ongoing" ? (
-                                <TouchableOpacity
-                                    activeOpacity={0.8}
-                                    onPress={() => setShowModalCancel(true)}
-                                    style={styles.cancelButton}
-                                >
-                                    <Text style={styles.buttonText}>
-                                        ยกเลิกกิจกรรม
-                                    </Text>
-                                </TouchableOpacity>
-                            ) : (
-                                // ข้อความยกเลิกกิจกรรม
-                                <View>
-                                    <Text style={styles.cancelText}>
-                                        กิจกรรมถูกยกเลิก
-                                    </Text>
-                                    <TouchableOpacity
-                                        activeOpacity={0.8}
-                                        onPress={allowActivity}
-                                        style={styles.allowButton}
-                                    >
-                                        <Text style={styles.buttonText}>
-                                            เปิดกิจกรรม
-                                        </Text>
-                                    </TouchableOpacity>
-                                </View>
+                            {activity.status !== "success" && (
+                                <>
+                                    {activity.status === "ongoing" ? (
+                                        <>
+                                            {/* เช็กเวลาเริ่ม */}
+                                            {new Date() < new firestore.Timestamp(activity.startDate.seconds, activity.startDate.nanoseconds).toDate() ? (
+                                                <TouchableOpacity
+                                                    activeOpacity={0.8}
+                                                    onPress={() => setShowModalCancel(true)}
+                                                    style={styles.cancelButton}
+                                                >
+                                                    <Text style={styles.buttonText}>ยกเลิกกิจกรรม</Text>
+                                                </TouchableOpacity>
+                                            ) : null}
+                                        </>
+                                    ) : (
+                                        // ข้อความยกเลิกกิจกรรม
+                                        <View>
+                                            <Text style={styles.cancelText}>
+                                                กิจกรรมถูกยกเลิก
+                                            </Text>
+                                            <TouchableOpacity
+                                                activeOpacity={0.8}
+                                                onPress={allowActivity}
+                                                style={styles.allowButton}
+                                            >
+                                                <Text style={styles.buttonText}>
+                                                    เปิดกิจกรรม
+                                                </Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    )}
+                                </>
                             )}
                         </View>
                     )}

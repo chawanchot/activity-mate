@@ -5,8 +5,9 @@ import {
     TouchableOpacity,
     Image,
     Alert,
+    ActivityIndicator,
 } from "react-native";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import auth from "@react-native-firebase/auth";
 import {
     GoogleSignin,
@@ -19,7 +20,9 @@ import { router } from "expo-router";
 import firestore from "@react-native-firebase/firestore";
 
 export default function Login() {
-    const { loggedIn, clearFirestoreCache } = useAuth();
+    const { loggedIn } = useAuth();
+    const [loading, setLoading] = useState(false);
+
 
     useEffect(() => {
         if (loggedIn) {
@@ -35,6 +38,8 @@ export default function Login() {
 
     // ฟังก์ชันเข้าสู่ระบบด้วย Google
     const signInGoogle = async () => {
+        setLoading(true);
+
         await GoogleSignin.signOut(); // บังคับให้เลือกบัญชีใหม่ทุกครั้ง
 
         try {
@@ -61,11 +66,15 @@ export default function Login() {
             } else {
                 console.log("Google Sign-In Error:", error);
             }
+        } finally {
+            setLoading(false);
         }
     };
 
     // ฟังก์ชันเข้าสู่ระบบด้วย Facebook
     const signInFacebook = async () => {
+        setLoading(true);
+
         try {
             const result = await LoginManager.logInWithPermissions([
                 "public_profile",
@@ -97,6 +106,8 @@ export default function Login() {
             } else {
                 console.log("Facebook Sign-In Error:", error);
             }
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -108,33 +119,39 @@ export default function Login() {
                 resizeMode="contain"
             />
 
-            {/* ปุ่มเข้าสู่ระบบ Google */}
-            <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={signInGoogle}
-                style={styles.button}
-            >
-                <Image
-                    source={require("../assets/icons/google.png")}
-                    style={{ height: 30 }}
-                    resizeMode="contain"
-                />
-                <Text style={styles.buttonText}>เข้าสู่ระบบด้วย Google</Text>
-            </TouchableOpacity>
+            {loading ? (
+                <ActivityIndicator size="large" color="#0000ff" />
+            ) : (
+                <>
+                    {/* ปุ่มเข้าสู่ระบบ Google */}
+                    <TouchableOpacity
+                        activeOpacity={0.8}
+                        onPress={signInGoogle}
+                        style={styles.button}
+                    >
+                        <Image
+                            source={require("../assets/icons/google.png")}
+                            style={{ height: 30 }}
+                            resizeMode="contain"
+                        />
+                        <Text style={styles.buttonText}>เข้าสู่ระบบด้วย Google</Text>
+                    </TouchableOpacity>
 
-            {/* ปุ่มเข้าสู่ระบบ Facebook */}
-            <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={signInFacebook}
-                style={styles.button}
-            >
-                <Image
-                    source={require("../assets/icons/facebook.png")}
-                    style={{ height: 30 }}
-                    resizeMode="contain"
-                />
-                <Text style={styles.buttonText}>เข้าสู่ระบบด้วย Facebook</Text>
-            </TouchableOpacity>
+                    {/* ปุ่มเข้าสู่ระบบ Facebook */}
+                    <TouchableOpacity
+                        activeOpacity={0.7}
+                        onPress={signInFacebook}
+                        style={styles.button}
+                    >
+                        <Image
+                            source={require("../assets/icons/facebook.png")}
+                            style={{ height: 30 }}
+                            resizeMode="contain"
+                        />
+                        <Text style={styles.buttonText}>เข้าสู่ระบบด้วย Facebook</Text>
+                    </TouchableOpacity>
+                </>
+            )}
         </SafeAreaView>
     );
 }
