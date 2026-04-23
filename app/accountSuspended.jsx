@@ -16,6 +16,7 @@ import { useAuth } from "../contexts/AuthContext";
 import firestore from "@react-native-firebase/firestore";
 import auth from "@react-native-firebase/auth";
 import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
+import messaging from "@react-native-firebase/messaging";
 
 const AccountSuspended = () => {
     const { isSuspended, user, loggedIn } = useAuth();
@@ -66,12 +67,27 @@ const AccountSuspended = () => {
             },
             {
                 text: "ยืนยัน",
-                onPress: () =>
-                    auth()
-                        .signOut()
-                        .catch((error) =>
-                            console.log("Error signing out: ", error)
-                        ),
+                onPress: async () => {
+                    try {
+                        // ลบ token ใน Firestore
+                        await firestore()
+                            .collection("users")
+                            .doc(user.uid)
+                            .update({
+                                fcmToken: firestore.FieldValue.delete(),
+                            });
+
+                        // ลบ token ในเครื่อง
+                        await messaging().deleteToken();
+                        console.log("FCM token deleted");
+
+                        // ออกจากระบบ Firebase
+                        await auth().signOut();
+                        console.log("Signed out successfully");
+                    } catch (error) {
+                        console.error("Error signing out: ", error);
+                    }
+                },
             },
         ]);
     };
@@ -97,10 +113,10 @@ const AccountSuspended = () => {
                 .get();
 
             const hasTicket = !ticketsSnap.empty;
-            setHasTicket(hasTicket); 
+            setHasTicket(hasTicket);
 
             setReason(detail.reason);
-            setSuspendedId(doc.id)
+            setSuspendedId(doc.id);
             setEnd(suspendedEnd);
         }
     };
@@ -108,7 +124,7 @@ const AccountSuspended = () => {
     const handleSubmit = async () => {
         if (!title === "" || !description === "") {
             Alert.alert("แจ้งเตือน", "กรุณากรอกหัวข้อและรายละเอียดให้ครบถ้วน", [
-                { text: "ตกลง" }
+                { text: "ตกลง" },
             ]);
             return;
         }
@@ -131,19 +147,19 @@ const AccountSuspended = () => {
             await firestore().collection("chatTickets").add({
                 ticketID: ticketId,
                 message: description,
-                userID: user.uid, 
+                userID: user.uid,
                 createdAt: firestore.FieldValue.serverTimestamp(),
             });
 
             setShowModal(false);
-            setHasTicket(true)
+            setHasTicket(true);
             setTitle("");
             setDescription("");
             setDescHeight(100);
         } catch (e) {
             console.log(e);
             Alert.alert("แจ้งเตือน", "ไม่สามารถส่งคำร้องได้ โปรดลองใหม่", [
-                { text: "ตกลง" }
+                { text: "ตกลง" },
             ]);
         }
     };
@@ -152,12 +168,13 @@ const AccountSuspended = () => {
         if (!hasTicket) {
             setShowModal(true);
         } else {
-            Alert.alert("แจ้งเตือน", "กรุณาตรวจสอบการตอบกลับจากแอดมินที่กล่องข้อความ", [
-                { text: "ตกลง" }
-            ]);
+            Alert.alert(
+                "แจ้งเตือน",
+                "กรุณาตรวจสอบการตอบกลับจากแอดมินที่กล่องข้อความ",
+                [{ text: "ตกลง" }]
+            );
         }
-    }
-
+    };
 
     useEffect(() => {
         if (!isSuspended) {
@@ -189,7 +206,10 @@ const AccountSuspended = () => {
                     บัญชีของคุณถูกระงับจนถึงวันที่ {end} เหตุผล: {reason}
                 </Text>
 
-                <TouchableOpacity style={styles.contactButton} onPress={handleOpenModal}>
+                <TouchableOpacity
+                    style={styles.contactButton}
+                    onPress={handleOpenModal}
+                >
                     <Text style={styles.contactText}>ติดต่อแอดมิน</Text>
                 </TouchableOpacity>
             </View>
@@ -215,13 +235,13 @@ const AccountSuspended = () => {
                     activeOpacity={0.8}
                 >
                     <View style={styles.menuContainer}>
-                        <TouchableOpacity onPress={() => {
-                            setMenuVisible(false);
-                            router.push("/userTickets");
-                        }}>
-                            <Text style={[styles.menuItem]}>
-                                กล่องข้อความ
-                            </Text>
+                        <TouchableOpacity
+                            onPress={() => {
+                                setMenuVisible(false);
+                                router.push("/userTickets");
+                            }}
+                        >
+                            <Text style={[styles.menuItem]}>กล่องข้อความ</Text>
                         </TouchableOpacity>
                         <TouchableOpacity onPress={logout}>
                             <Text style={[styles.menuItem, { color: "red" }]}>
@@ -248,7 +268,11 @@ const AccountSuspended = () => {
                             onPress={handleCloseModal}
                             style={styles.modalCloseIcon}
                         >
-                            <MaterialIcons name="close" size={24} color="black" />
+                            <MaterialIcons
+                                name="close"
+                                size={24}
+                                color="black"
+                            />
                         </TouchableOpacity>
 
                         {/* เรื่อง */}
@@ -291,9 +315,11 @@ const AccountSuspended = () => {
                                 onChangeText={setDescription}
                                 multiline
                                 onContentSizeChange={(e) =>
-                                    setDescHeight(e.nativeEvent.contentSize.height)
+                                    setDescHeight(
+                                        e.nativeEvent.contentSize.height
+                                    )
                                 }
-                                maxLength={200} 
+                                maxLength={200}
                             />
                         </View>
 
@@ -322,7 +348,7 @@ const styles = StyleSheet.create({
         padding: 16,
     },
     floatingMenuButton: {
-        position: 'absolute',
+        position: "absolute",
         top: 10,
         right: 16,
         zIndex: 1000,
@@ -331,15 +357,15 @@ const styles = StyleSheet.create({
     modalOverlay: {
         flex: 1,
         // backgroundColor: 'rgba(0,0,0,0.2)',
-        justifyContent: 'flex-start',
-        alignItems: 'flex-end',
+        justifyContent: "flex-start",
+        alignItems: "flex-end",
         paddingTop: 60,
         paddingRight: 16,
     },
     menuContainer: {
-        backgroundColor: 'white',
+        backgroundColor: "white",
         borderRadius: 12,
-        shadowColor: '#000',
+        shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 4,
@@ -351,7 +377,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 14,
         fontFamily: "Kanit_400Regular",
         fontSize: 14,
-        color: '#333',
+        color: "#333",
     },
     content: {
         alignItems: "center",

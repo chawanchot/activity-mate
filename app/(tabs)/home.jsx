@@ -18,6 +18,7 @@ import firestore from "@react-native-firebase/firestore";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import auth from "@react-native-firebase/auth";
+import messaging from "@react-native-firebase/messaging";
 
 export default function MemberHome() {
     const { user, loggedIn, page, setPage } = useAuth();
@@ -37,12 +38,27 @@ export default function MemberHome() {
             },
             {
                 text: "ยืนยัน",
-                onPress: () =>
-                    auth()
-                        .signOut()
-                        .catch((error) =>
-                            console.log("Error signing out: ", error)
-                        ),
+                onPress: async () => {
+                    try {
+                        // ลบ token ใน Firestore
+                        await firestore()
+                            .collection("users")
+                            .doc(user.uid)
+                            .update({
+                                fcmToken: firestore.FieldValue.delete(),
+                            });
+
+                        // ลบ token ในเครื่อง
+                        await messaging().deleteToken();
+                        console.log("FCM token deleted");
+
+                        // ออกจากระบบ Firebase
+                        await auth().signOut();
+                        console.log("Signed out successfully");
+                    } catch (error) {
+                        console.error("Error signing out: ", error);
+                    }
+                },
             },
         ]);
     };
@@ -295,7 +311,7 @@ export default function MemberHome() {
     useEffect(() => {
         if (!loggedIn) {
             router.replace("/login");
-        } 
+        }
     }, [loggedIn]);
 
     if (!user) {
@@ -490,7 +506,15 @@ export default function MemberHome() {
                                         </Text>
 
                                         <View style={styles.activityFooter}>
-                                            <Text style={[styles.activityCategory, { backgroundColor: item.categoryColor }]}>
+                                            <Text
+                                                style={[
+                                                    styles.activityCategory,
+                                                    {
+                                                        backgroundColor:
+                                                            item.categoryColor,
+                                                    },
+                                                ]}
+                                            >
                                                 {item.category}
                                             </Text>
 
@@ -546,33 +570,45 @@ export default function MemberHome() {
                 visible={menuVisible}
                 onRequestClose={() => setMenuVisible(false)}
             >
-                <Pressable style={styles.modalOverlay} onPress={() => setMenuVisible(false)} activeOpacity={0.8}>
+                <Pressable
+                    style={styles.modalOverlay}
+                    onPress={() => setMenuVisible(false)}
+                    activeOpacity={0.8}
+                >
                     <View style={styles.menuContainer}>
                         {user.role === "admin" && (
-                            <TouchableOpacity onPress={() => { 
-                                router.replace('/(admin)/home'); 
-                                setPage("admin");
-                                setMenuVisible(false); 
-                            }}>
-                                <Text style={styles.menuItem}>สลับไปหน้าแอดมิน</Text>
+                            <TouchableOpacity
+                                onPress={() => {
+                                    router.replace("/(admin)/home");
+                                    setPage("admin");
+                                    setMenuVisible(false);
+                                }}
+                            >
+                                <Text style={styles.menuItem}>
+                                    สลับไปหน้าแอดมิน
+                                </Text>
                             </TouchableOpacity>
                         )}
-                        <TouchableOpacity onPress={() => {
-                            setMenuVisible(false);
-                            router.push("/userTickets");
-                        }}>
-                            <Text style={[styles.menuItem]}>
-                                กล่องข้อความ
-                            </Text>
+                        <TouchableOpacity
+                            onPress={() => {
+                                setMenuVisible(false);
+                                router.push("/userTickets");
+                            }}
+                        >
+                            <Text style={[styles.menuItem]}>กล่องข้อความ</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => { 
-                            router.push('/editProfile'); 
-                            setMenuVisible(false); 
-                        }}>
+                        <TouchableOpacity
+                            onPress={() => {
+                                router.push("/editProfile");
+                                setMenuVisible(false);
+                            }}
+                        >
                             <Text style={styles.menuItem}>แก้ไขข้อมูล</Text>
                         </TouchableOpacity>
                         <TouchableOpacity onPress={logout}>
-                            <Text style={[styles.menuItem, { color: 'red' }]}>ออกจากระบบ</Text>
+                            <Text style={[styles.menuItem, { color: "red" }]}>
+                                ออกจากระบบ
+                            </Text>
                         </TouchableOpacity>
                     </View>
                 </Pressable>
@@ -588,7 +624,7 @@ const styles = StyleSheet.create({
         paddingTop: 18,
     },
     floatingMenuButton: {
-        position: 'absolute',
+        position: "absolute",
         top: 10,
         right: 16,
         zIndex: 1000,
@@ -597,15 +633,15 @@ const styles = StyleSheet.create({
     modalOverlay: {
         flex: 1,
         // backgroundColor: 'rgba(0,0,0,0.2)',
-        justifyContent: 'flex-start',
-        alignItems: 'flex-end',
+        justifyContent: "flex-start",
+        alignItems: "flex-end",
         paddingTop: 60,
         paddingRight: 16,
     },
     menuContainer: {
-        backgroundColor: 'white',
+        backgroundColor: "white",
         borderRadius: 12,
-        shadowColor: '#000',
+        shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 4,
@@ -617,7 +653,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 14,
         fontFamily: "Kanit_400Regular",
         fontSize: 14,
-        color: '#333',
+        color: "#333",
     },
     headerContainer: {
         alignItems: "center",

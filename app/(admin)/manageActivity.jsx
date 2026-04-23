@@ -255,12 +255,7 @@ export default function ManageActivity() {
                                 activeOpacity={0.8}
                                 style={styles.inputContainer}
                                 onPress={() =>
-                                    router.push({
-                                        pathname: "/searchEventLocation",
-                                        params: {
-                                            backRoute: "/manageActivity",
-                                        },
-                                    })
+                                    router.push("/searchEventLocation")
                                 }
                             >
                                 <MaterialIcons

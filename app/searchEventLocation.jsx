@@ -4,7 +4,7 @@ import {
     TouchableOpacity,
     StyleSheet,
     FlatList,
-    Alert
+    Alert,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -28,14 +28,18 @@ export default function ProvinceScreen() {
         }
         if (newTab === "district") {
             if (selectedProvice === "") {
-                Alert.alert("แจ้งเตือน", "กรุณาเลือกจังหวัดก่อน", [{ text: "ตกลง" }]);
+                Alert.alert("แจ้งเตือน", "กรุณาเลือกจังหวัดก่อน", [
+                    { text: "ตกลง" },
+                ]);
             } else {
                 setTab(newTab);
             }
         }
         if (newTab === "subdistrict") {
             if (selectedDistrict === "") {
-                Alert.alert("แจ้งเตือน", "กรุณาเลือกอำเภอก่อน", [{ text: "ตกลง" }]);
+                Alert.alert("แจ้งเตือน", "กรุณาเลือกอำเภอก่อน", [
+                    { text: "ตกลง" },
+                ]);
             } else {
                 setTab(newTab);
             }
@@ -46,7 +50,9 @@ export default function ProvinceScreen() {
         setSelectedProvice(provice);
         setSelectedDistrict("");
         setSelectedSubDistrict("");
-        const filltered = locationData.filter((item) => item.name_th === provice);
+        const filltered = locationData.filter(
+            (item) => item.name_th === provice
+        );
 
         // เรียงตามตัวอักษร
         const sortedDistrict = [...filltered[0].amphure].sort((a, b) =>
@@ -60,7 +66,9 @@ export default function ProvinceScreen() {
     const pickDistrict = (district) => {
         setSelectedDistrict(district);
         setSelectedSubDistrict("");
-        const filltered = fillteredDistrict.filter((item) => item.name_th === district);
+        const filltered = fillteredDistrict.filter(
+            (item) => item.name_th === district
+        );
 
         // เรียงตามตัวอักษร
         const sortedSubDistrict = [...filltered[0].tambon].sort((a, b) =>
@@ -73,29 +81,29 @@ export default function ProvinceScreen() {
 
     const pickSubDistrict = (subdistrict) => {
         setSelectedSubDistrict(subdistrict);
-    }
+    };
 
     const confirm = () => {
-        router.replace({
-            pathname: params.backRoute,
-            params: {
+        router.back(); // กลับไปหน้าเดิม
+        setTimeout(() => {
+            router.setParams({
                 provice: selectedProvice,
                 district: selectedDistrict,
                 subdistrict: selectedSubDistrict,
-            },
-        });
+            });
+        }, 50);
     };
 
     const clearSearch = () => {
-        router.replace({
-            pathname: params.backRoute,
-            params: {
+        router.back();
+        setTimeout(() => {
+            router.setParams({
                 provice: "",
                 district: "",
                 subdistrict: "",
-            },
-        });
-    }
+            });
+        }, 50);
+    };
 
     return (
         <View style={styles.container}>
@@ -105,7 +113,12 @@ export default function ProvinceScreen() {
                     onPress={() => changeTab("provice")}
                     style={[styles.tab, tab === "provice" && styles.activeTab]}
                 >
-                    <Text style={[styles.tabText, tab === "provice" && styles.activeTabText]}>
+                    <Text
+                        style={[
+                            styles.tabText,
+                            tab === "provice" && styles.activeTabText,
+                        ]}
+                    >
                         จังหวัด
                     </Text>
                 </TouchableOpacity>
@@ -113,15 +126,28 @@ export default function ProvinceScreen() {
                     onPress={() => changeTab("district")}
                     style={[styles.tab, tab === "district" && styles.activeTab]}
                 >
-                    <Text style={[styles.tabText, tab === "district" && styles.activeTabText]}>
+                    <Text
+                        style={[
+                            styles.tabText,
+                            tab === "district" && styles.activeTabText,
+                        ]}
+                    >
                         อำเภอ
                     </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     onPress={() => changeTab("subdistrict")}
-                    style={[styles.tab, tab === "subdistrict" && styles.activeTab]}
+                    style={[
+                        styles.tab,
+                        tab === "subdistrict" && styles.activeTab,
+                    ]}
                 >
-                    <Text style={[styles.tabText, tab === "subdistrict" && styles.activeTabText]}>
+                    <Text
+                        style={[
+                            styles.tabText,
+                            tab === "subdistrict" && styles.activeTabText,
+                        ]}
+                    >
                         ตำบล
                     </Text>
                 </TouchableOpacity>
@@ -132,7 +158,9 @@ export default function ProvinceScreen() {
                 {/* จังหวัด */}
                 {tab === "provice" ? (
                     <FlatList
-                        data={[...locationData].sort((a, b) => a.name_th.localeCompare(b.name_th))} // เรียงจังหวัดตามตัวอักษรก่อนแสดง 
+                        data={[...locationData].sort((a, b) =>
+                            a.name_th.localeCompare(b.name_th)
+                        )} // เรียงจังหวัดตามตัวอักษรก่อนแสดง
                         keyExtractor={(item) => item.id.toString()}
                         renderItem={({ item }) => (
                             <TouchableOpacity
@@ -141,9 +169,15 @@ export default function ProvinceScreen() {
                             >
                                 <View style={styles.itemNameContainer}>
                                     {selectedProvice === item.name_th && ( // แสดงไอคอนเมื่อเลือก
-                                        <MaterialIcons name="check" size={24} color="blue" />
+                                        <MaterialIcons
+                                            name="check"
+                                            size={24}
+                                            color="blue"
+                                        />
                                     )}
-                                    <Text style={styles.itemText}>{item.name_th}</Text>
+                                    <Text style={styles.itemText}>
+                                        {item.name_th}
+                                    </Text>
                                 </View>
                                 <MaterialIcons
                                     name="keyboard-arrow-right"
@@ -168,9 +202,15 @@ export default function ProvinceScreen() {
                             >
                                 <View style={styles.itemNameContainer}>
                                     {selectedDistrict === item.name_th && ( // แสดงไอคอนเมื่อเลือก
-                                        <MaterialIcons name="check" size={24} color="blue" />
+                                        <MaterialIcons
+                                            name="check"
+                                            size={24}
+                                            color="blue"
+                                        />
                                     )}
-                                    <Text style={styles.itemText}>{item.name_th}</Text>
+                                    <Text style={styles.itemText}>
+                                        {item.name_th}
+                                    </Text>
                                 </View>
                                 <MaterialIcons
                                     name="keyboard-arrow-right"
@@ -195,9 +235,15 @@ export default function ProvinceScreen() {
                             >
                                 <View style={styles.itemNameContainer}>
                                     {selectedSubDistrict === item.name_th && ( // แสดงไอคอนเมื่อเลือก
-                                        <MaterialIcons name="check" size={24} color="blue" />
+                                        <MaterialIcons
+                                            name="check"
+                                            size={24}
+                                            color="blue"
+                                        />
                                     )}
-                                    <Text style={styles.itemText}>{item.name_th}</Text>
+                                    <Text style={styles.itemText}>
+                                        {item.name_th}
+                                    </Text>
                                 </View>
                             </TouchableOpacity>
                         )}
@@ -208,7 +254,10 @@ export default function ProvinceScreen() {
 
             {/* ปุ่มค้นหาที่อยู่ล่างสุด */}
             <View style={styles.buttonContainer}>
-                <TouchableOpacity style={[styles.button, { backgroundColor: "#FF2424" }]} onPress={clearSearch}>
+                <TouchableOpacity
+                    style={[styles.button, { backgroundColor: "#FF2424" }]}
+                    onPress={clearSearch}
+                >
                     <Text style={styles.buttonText}>ล้างการค้นหา</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.button} onPress={confirm}>
@@ -277,7 +326,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         borderRadius: 10,
-        flex: 1
+        flex: 1,
     },
     buttonText: {
         fontFamily: "Kanit_600SemiBold",

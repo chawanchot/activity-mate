@@ -7,6 +7,7 @@ import {
     Kanit_600SemiBold,
     Kanit_700Bold,
 } from "@expo-google-fonts/kanit";
+import useFCM from '../contexts/useFCM';
 
 // 👇 ตัวแยก logic ออกไปใน component ที่อยู่ "ภายใต้" <AuthProvider>
 function RootNavigation() {
@@ -118,6 +119,8 @@ export default function RootLayout() {
         Kanit_600SemiBold,
         Kanit_700Bold,
     });
+
+    useFCM();
 
     if (!fontsLoaded) return null;
 

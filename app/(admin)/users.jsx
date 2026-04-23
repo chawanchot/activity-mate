@@ -54,9 +54,9 @@ export default function Users() {
 
                     if (currentDate <= suspendedEndDate) {
                         isSuspended = true;
+                    } else {
+                        isSuspended = false;
                     }
-
-                    isSuspended = true;
                 }
 
                 // เพิ่มข้อมูลผู้ใช้ลงใน array

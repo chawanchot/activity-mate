@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from "react";
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
+import messaging from "@react-native-firebase/messaging";
 
 const AuthContext = createContext();
 
@@ -44,6 +45,20 @@ export const AuthProvider = ({ children }) => {
                                     setUser(userData);
                                     setLoggedIn(true);
 
+                                    // เก็บ FCM Token
+                                    try {
+                                        const token = await messaging().getToken();
+                                        console.log("🔥 FCM Token:", token);
+
+                                        if (token) {
+                                            await firestore().collection("users").doc(data.uid).update({
+                                                fcmToken: token,
+                                            });
+                                        }
+                                    } catch (err) {
+                                        console.error("Error updating FCM token:", err);
+                                    }
+
                                     if (userData.role === "admin") {
                                         setPage("admin");
                                     } else {
@@ -62,6 +77,20 @@ export const AuthProvider = ({ children }) => {
                                         .collection("users")
                                         .doc(data.uid)
                                         .set(newUser);
+
+                                    // เก็บ FCM Token สำหรับ user ใหม่
+                                    try {
+                                        const token = await messaging().getToken();
+                                        console.log("🔥 FCM Token:", token);
+
+                                        if (token) {
+                                            await firestore().collection("users").doc(data.uid).update({
+                                                fcmToken: token,
+                                            });
+                                        }
+                                    } catch (err) {
+                                        console.error("Error updating FCM token:", err);
+                                    }
 
                                     if (newUser.role === "admin") {
                                         setPage("admin");

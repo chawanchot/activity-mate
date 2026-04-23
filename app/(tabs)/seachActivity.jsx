@@ -184,12 +184,7 @@ export default function MemberSeachActivity() {
                             <TouchableOpacity
                                 activeOpacity={0.8}
                                 style={[styles.inputContainer, { flex: 1 }]}
-                                onPress={() => router.push({
-                                    pathname: "/searchEventLocation",
-                                    params: {
-                                        backRoute: "/seachActivity"
-                                    }
-                                })}
+                                onPress={() => router.push("/searchEventLocation")}
                             >
                                 <MaterialIcons
                                     name="location-on"

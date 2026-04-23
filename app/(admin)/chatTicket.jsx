@@ -71,6 +71,7 @@ export default function AdminChatTicket() {
                             message: message.message,
                             user: message.userID,
                             username: userData.username,
+                            role: userData.role,
                             datetime: formattedDateTime,
                         };
                     })
@@ -135,11 +136,11 @@ export default function AdminChatTicket() {
                     >
                         {item.user !== user.uid ? (
                             <Text style={styles.senderName}>
-                                {item.username}
+                                {item.role === "admin" ? `[ ADMIN ] - ${item.username}` : item.username}
                             </Text>
                         ) : (
                             <Text style={styles.senderName}>
-                                [ ADMIN ] - {item.username}
+                                {item.role === "admin" ? `[ ADMIN ] - ${item.username}` : item.username}
                             </Text>
                         )}
                         <View

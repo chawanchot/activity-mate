@@ -95,6 +95,37 @@ export default function Category() {
         }
     };
 
+    // ฟังก์ชันลบหมวดหมู่
+    const deleteCategory = async (id, name) => {
+        try {
+            // ตรวจสอบก่อนว่ามีกิจกรรมผูกกับ category นี้หรือไม่
+            const checkSnapshot = await firestore()
+                .collection("activities")
+                .where("categoryID", "==", id)
+                .limit(1) // เอาแค่ 1 เพื่อตรวจสอบ
+                .get();
+
+            if (!checkSnapshot.empty) {
+                Alert.alert("แจ้งเตือน", "ไม่สามารถลบได้ เนื่องจากมีกิจกรรมใช้งานหมวดหมู่นี้", [{ text: "ตกลง" },]);
+                return;
+            }
+
+            // ถ้าไม่มีการใช้งาน -> ให้ยืนยันก่อนลบ
+            Alert.alert("แจ้งเตือน", "ยืนยันการลบหมวดหมู่กิจกรรม " + name, [
+                { text: "ยกเลิก" },
+                {
+                    text: "ยืนยัน",
+                    onPress: async () => {
+                        await firestore().collection("category").doc(id).delete();
+                        getCategoryData();
+                    },
+                },
+            ]);
+        } catch (error) {
+            console.error("Error deleting category:", error);
+        }
+    };
+
     // ฟังก์ชันเปิด modal แก้ไขหมวดหมู่
     const openEditModal = (id, name, color) => {
         setEditInput(name);
@@ -242,43 +273,47 @@ export default function Category() {
                                 </Text>
                             </View>
                             <View style={styles.buttonContainer}>
-                                {/* ปุ่มแก้ไข */}
-                                <TouchableOpacity
-                                    activeOpacity={0.8}
-                                    onPress={() =>
-                                        openEditModal(item.id, item.name, item.color)
-                                    }
-                                    style={[styles.manageBtn, { backgroundColor: "#FFC300" }]}
-                                >
-                                    <Text style={[styles.manageBtnText, { color: "black" }]}>แก้ไข</Text>
-                                </TouchableOpacity>
+                                {/* แถวบน: แก้ไข */}
+                                <View style={styles.rowContainer}>
+                                    <TouchableOpacity
+                                        activeOpacity={0.8}
+                                        onPress={() =>
+                                            openEditModal(item.id, item.name, item.color)
+                                        }
+                                        style={[styles.manageBtn, { backgroundColor: "#FFC300", flex: 1, marginRight: 0 }]}
+                                    >
+                                        <Text style={[styles.manageBtnText, { color: "black" }]}>แก้ไข</Text>
+                                    </TouchableOpacity>
+                                </View>
 
-                                {/* ปุ่มเปิด/ปิดใช้งาน */}
-                                {item.status ? (
+                                {/* แถวล่าง: ยกเลิก/เปิดใช้งาน + ลบ */}
+                                <View style={styles.rowContainer}>
+                                    {item.status ? (
+                                        <TouchableOpacity
+                                            activeOpacity={0.8}
+                                            onPress={() => cancelCategory(item.id, item.name)}
+                                            style={[styles.manageBtn, { backgroundColor: "#525151ff", flex: 1, marginRight: 4 }]}
+                                        >
+                                            <Text style={styles.manageBtnText}>ยกเลิก</Text>
+                                        </TouchableOpacity>
+                                    ) : (
+                                        <TouchableOpacity
+                                            activeOpacity={0.8}
+                                            onPress={() => enableCategory(item.id, item.name)}
+                                            style={[styles.manageBtn, { backgroundColor: "#0095FF", flex: 1, marginRight: 4 }]}
+                                        >
+                                            <Text style={styles.manageBtnText}>เปิดใช้</Text>
+                                        </TouchableOpacity>
+                                    )}
+
                                     <TouchableOpacity
                                         activeOpacity={0.8}
-                                        onPress={() =>
-                                            cancelCategory(item.id, item.name)
-                                        }
-                                        style={[styles.manageBtn, { backgroundColor: "#FF6200" }]}
+                                        onPress={() => deleteCategory(item.id, item.name)}
+                                        style={[styles.manageBtn, { backgroundColor: "#FF0000", flex: 1 }]}
                                     >
-                                        <Text style={styles.manageBtnText}>
-                                            ยกเลิก
-                                        </Text>
+                                        <Text style={styles.manageBtnText}>ลบ</Text>
                                     </TouchableOpacity>
-                                ) : (
-                                    <TouchableOpacity
-                                        activeOpacity={0.8}
-                                        onPress={() =>
-                                            enableCategory(item.id, item.name)
-                                        }
-                                        style={[styles.manageBtn, { backgroundColor: "#0095FF" }]}
-                                    >
-                                        <Text style={styles.manageBtnText}>
-                                            เปิดใช้งาน
-                                        </Text>
-                                    </TouchableOpacity>
-                                )}
+                                </View>
                             </View>
                         </View>
                     </View>
@@ -453,18 +488,16 @@ const styles = StyleSheet.create({
         alignSelf: "flex-start",
     },
     buttonContainer: {
-        width: "25%",
+        width: "35%", 
         justifyContent: "center",
         alignItems: "center",
-        paddingHorizontal: 6,
-        gap: 3
     },
     manageBtn: {
-        width: "100%",
         height: 30,
         borderRadius: 5,
         justifyContent: "center",
-        alignItems: "center"
+        alignItems: "center",
+        paddingHorizontal: 6,
     },
     manageBtnText: {
         color: "white",
@@ -500,6 +533,11 @@ const styles = StyleSheet.create({
         position: "absolute",
         top: 10,
         right: 10
+    },
+    rowContainer: {
+        flexDirection: "row",
+        width: "100%",
+        marginVertical: 2,
     },
     inputContainer: {
         flexDirection: "row",
